@@ -8,3 +8,6 @@
 <use name="boost"/>
 <use name="CondFormats/DataRecord"/>
 <use name="CalibTracker/Records"/>
+<use name="PhysicsTools/TensorFlow" />
+<!--use name="RecoTracker/FinalTrackSelectors"/-->
+<!--use name="TrackingTools/Records"/-->
