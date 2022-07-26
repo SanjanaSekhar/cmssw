@@ -9,11 +9,14 @@ from Configuration.ProcessModifiers.alpaka_cff import alpaka
 from RecoLocalTracker.SiPixelRecHits.PixelCPETemplateReco_cfi import *
 #
 # 2. Pixel Generic CPE
-#
 from RecoLocalTracker.SiPixelRecHits.PixelCPEGeneric_cfi import *
 from RecoLocalTracker.SiPixelRecHits.pixelCPEFastESProducerPhase1_cfi import *
 from RecoLocalTracker.SiPixelRecHits.pixelCPEFastESProducerPhase2_cfi import *
 from RecoLocalTracker.SiPixelRecHits.pixelCPEFastESProducerHIonPhase1_cfi import *
+# 3. NN CPE
+#
+from RecoLocalTracker.SiPixelRecHits.PixelCPENNReco_cfi import *
+#
 #
 # 3. ESProducer for the Magnetic-field dependent template records
 #
