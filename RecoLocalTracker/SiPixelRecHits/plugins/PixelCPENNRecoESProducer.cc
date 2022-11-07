@@ -89,7 +89,7 @@ std::unique_ptr<PixelClusterParameterEstimator> PixelCPENNRecoESProducer::produc
   //}
 
   return std::make_unique<PixelCPENNReco>(pset_,
-                                               // &iRecord.get(magfieldToken_),
+                                                &iRecord.get(magfieldToken_),
                                                 iRecord.get(pDDToken_),
                                                 iRecord.get(hTTToken_),
                                                 //lorentzAngleProduct,
@@ -105,7 +105,7 @@ void PixelCPENNRecoESProducer::fillDescriptions(edm::ConfigurationDescriptions& 
 
   // from PixelCPETemplateReco
   PixelCPETemplateReco::fillPSetDescription(desc);
-
+  PixelCPENNReco::fillPSetDescription(desc);
   // specific to PixelCPENNRecoESProducer
   desc.add<std::string>("ComponentName", "PixelCPENNReco");
   desc.add<std::string>("tfDnnLabel", "tracksterSelectionTf");
