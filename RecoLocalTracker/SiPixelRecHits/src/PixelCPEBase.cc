@@ -57,7 +57,7 @@ PixelCPEBase::PixelCPEBase(edm::ParameterSet const& conf,
   genErrorDBObject_ = genErrorDBObject;
 
   //-- Template Calibration Object from DB
-  if (theFlag_ != 0)
+  if (theFlag_ != 0 and theFlag_ != 59) // flag = 59 is for NN Reco
     templateDBobject_ = templateDBobject;  // flag to check if it is generic or templates
 
   // Configurables
@@ -170,7 +170,7 @@ void PixelCPEBase::fillDetParams() {
     if (theFlag_ == 0) {         // for generic
       if (LoadTemplatesFromDB_)  // do only if genError requested
         p.detTemplateId = genErrorDBObject_->getGenErrorID(p.theDet->geographicalId().rawId());
-    } else {  // for templates
+    } else if(theFlag_ != 59){  // for templates
       p.detTemplateId = templateDBobject_->getTemplateID(p.theDet->geographicalId());
     }
 

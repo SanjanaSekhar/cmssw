@@ -45,14 +45,14 @@ namespace {
 //
 //-----------------------------------------------------------------------------
 PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
-                                           //const MagneticField* mag,
+                                           const MagneticField* mag,
                                            const TrackerGeometry& geom,
                                            const TrackerTopology& ttopo,
                                            //const SiPixelLorentzAngle* lorentzAngle,
                                            //const SiPixelTemplateDBObject* templateDBobject,
                                            const tensorflow::Session* session_x
                                            )
-    : PixelCPEBase(conf, nullptr, geom, ttopo, nullptr, nullptr, nullptr, nullptr,1){
+    : PixelCPEBase(conf, mag, geom, ttopo, nullptr, nullptr, nullptr, nullptr,59){
    // inputTensorName_x(conf.getParameter<std::string>("inputTensorName_x")),
    // anglesTensorName_x(conf.getParameter<std::string>("anglesTensorName_x")),
    // outputTensorName_(conf.getParameter<std::string>("outputTensorName")){
@@ -105,6 +105,7 @@ PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
       anglesTensorName_x = conf.getParameter<std::string>("anglesTensorName_x");
       outputTensorName_ = conf.getParameter<std::string>("outputTensorName");
 	 cpe = conf.getParameter<std::string>("cpe");
+	graphPath_x = conf.getParameter<std::string>("graphPath_x");
 }
 
 //-----------------------------------------------------------------------------
@@ -214,10 +215,10 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   assert(mrow > 0);
   assert(mcol > 0);
 
-  float clustMatrix[mrow][mcol], clustMatrix_temp[mrow][mcol], clustMatrix_x[mrow];
-  memset(clustMatrix, 0, sizeof(float) * mrow * mcol);
-  memset(clustMatrix_temp, 0, sizeof(float) * mrow * mcol);
-  memset(clustMatrix_x, 0, sizeof(float) * mrow);
+  float clustMatrix[TXSIZE][TYSIZE], clustMatrix_temp[TXSIZE][TYSIZE], clustMatrix_x[TXSIZE];
+  memset(clustMatrix, 0, sizeof(float) * TXSIZE * TYSIZE);
+  memset(clustMatrix_temp, 0, sizeof(float) * TXSIZE * TYSIZE);
+  memset(clustMatrix_x, 0, sizeof(float) * TXSIZE);
 
   int n_double_x = 0, n_double_y = 0;
   int mid_x = 0, mid_y = 0;    
@@ -268,13 +269,14 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
     int offset_y = 10 - mid_y;
       
 
-
+	printf("Cluster size: %i\n",theClusterParam.theCluster->size());
   // Copy clust's pixels (calibrated in electrons) into clusMatrix;
-  for (int i = 0; i != theClusterParam.theCluster->size(); ++i) {
+  for (int i = 0; i < theClusterParam.theCluster->size(); ++i) {
     auto pix = theClusterParam.theCluster->pixel(i);
     int irow = int(pix.x) - row_offset + offset_x;
     int icol = int(pix.y) - col_offset + offset_y;
-
+	if(std::isnan(pix.adc)) printf("PIX.ADC IS NAN");
+	printf("irow = %i, icol = %i, pix.adc = %i, mrow = %i, offset_x = %i, mcol = %i, offset_y = %i\n",irow,icol,pix.adc,mrow,offset_x,mcol,offset_y);	
     if ((irow >= mrow+offset_x) || (icol >= mcol+offset_y)){
         printf("irow or icol exceeded, SKIPPING. irow = %i, mrow = %i, offset_x = %i,icol = %i, mcol = %i, offset_y = %i\n",irow,mrow,offset_x,icol,mcol,offset_y);
         continue;
@@ -295,9 +297,21 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
       }
     // Gavril : what do we do here if the row/column is larger than cluster_matrix_size_x/cluster_matrix_size_y  ?
     // Ignore them for the moment...
-    if ((irow < mrow) & (icol < mcol))
-      clustMatrix_temp[irow][icol] = float(pix.adc)/25000.;
+    if ((irow < mrow + offset_x) & (icol < mcol + offset_y)){
+	if(isnan(pix.adc)){ printf("PIX ADC IS NAN\n");
+	edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
+                                          << "Pixel adc is NaN !!! ";
+      }
+	printf("%i\n",pix.adc);	
+	clustMatrix_temp[irow][icol] = float(pix.adc)/25000.;
   }
+}
+	printf("BEFORE DOUBLE PIX FIX\n");
+	for(int i = 0; i < TXSIZE ; i++){
+		for(int j = 0; j < TYSIZE; j++)
+			printf("%.2f ",clustMatrix_temp[i][j]);
+		printf("\n");
+	}
 /*
   // Make and fill the bool arrays flagging double pixels
   bool xdouble[mrow], ydouble[mcol];
@@ -319,10 +333,10 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 
 //first deal with double width pixels in x
     int k=0,m=0;
-    for(int i=0;i<mrow;i++){
+    for(int i=0;i<TXSIZE;i++){
       if(i==double_row[m] and clustersize_x>1){
         printf("TREATING DPIX%i IN X\n",m+1);
-        for(int j=0;j<mcol;j++){
+        for(int j=0;j<TYSIZE;j++){
           clustMatrix[i][j]=clustMatrix_temp[k][j]/2.;
           clustMatrix[i+1][j]=clustMatrix_temp[k][j]/2.;
         }
@@ -333,23 +347,23 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
         }
       }
       else{
-        for(int j=0;j<mcol;j++){
+        for(int j=0;j<TYSIZE;j++){
           clustMatrix[i][j]=clustMatrix_temp[k][j];
         }
       }
       k++;
     }
     k=0;m=0;
-    for(int i=0;i<mrow;i++){
-      for(int j=0;j<mcol;j++){
+    for(int i=0;i<TXSIZE;i++){
+      for(int j=0;j<TYSIZE;j++){
         clustMatrix_temp[i][j]=clustMatrix[i][j];
         clustMatrix[i][j]=0.;
       }
     }
-    for(int j=0;j<mcol;j++){
+    for(int j=0;j<TYSIZE;j++){
       if(j==double_col[m] and clustersize_y>1){
         printf("TREATING DPIX%i IN Y\n",m+1);
-        for(int i=0;i<mrow;i++){
+        for(int i=0;i<TXSIZE;i++){
           clustMatrix[i][j]=clustMatrix_temp[i][k]/2.;
           clustMatrix[i][j+1]=clustMatrix_temp[i][k]/2.;
         }
@@ -360,15 +374,15 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
         }
       }
       else{
-        for(int i=0;i<mrow;i++){
+        for(int i=0;i<TXSIZE;i++){
           clustMatrix[i][j]=clustMatrix_temp[i][k];
         }
       }
       k++;
     }
 //compute the 1d projection 
-   for(int i = 0;i < mrow; i++){
-      for(int j = 0; j < mcol; j++){
+   for(int i = 0;i < TXSIZE; i++){
+      for(int j = 0; j < TYSIZE; j++){
         clustMatrix_x[i] += clustMatrix[i][j];
 	}
     }
@@ -437,15 +451,24 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
       }
       //  Determine current time
 
+	for(int i = 0 ; i < TXSIZE ; i++){
+		for(int j = 0 ; j < TYSIZE ; j++)
+			printf("%.2f ",clustMatrix[i][j]);
+		printf("\n");
+	}
+	printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
+	for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
           //gettimeofday(&now0, &timz);
         // define the output and run
       std::vector<tensorflow::Tensor> output_x;
       if(cpe=="cnn2d"){ //gettimeofday(&now0, &timz);
+	printf("INSIDE CNN2D BLOCK\n");
         tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_}, {anglesTensorName_x,angles}}, {outputTensorName_}, &output_x);
        // gettimeofday(&now1, &timz);
       }
       else { // gettimeofday(&now0, &timz);
-        tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_}, &output_x);
+        printf("INSIDE CNN1D BLOCK\n");
+	tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_}, &output_x);
        // gettimeofday(&now1, &timz);
       }
       // convert microns to cms
@@ -753,13 +776,13 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
 }
 
 void PixelCPENNReco::fillPSetDescription(edm::ParameterSetDescription& desc) {
-  desc.add<int>("barrelTemplateID", 0);
-  desc.add<int>("forwardTemplateID", 0);
-  desc.add<int>("directoryWithTemplates", 0);
-  desc.add<int>("speed", -2);
-  desc.add<bool>("UseClusterSplitter", false);
+  //desc.add<int>("barrelTemplateID", 0);
+  //desc.add<int>("forwardTemplateID", 0);
+  //desc.add<int>("directoryWithTemplates", 0);
+  //desc.add<int>("speed", -2);
+  //desc.add<bool>("UseClusterSplitter", false);
   //some defaults for testing
-  desc.add<std::string>("graphPath_x","/uscms_data/d3/ssekhar/CMSSW_11_1_2/src/TrackerStuff/PixelHitsCNN/data/graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
+  desc.add<std::string>("graphPath_x","graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
   desc.add<std::string>("inputTensorName_x","input_1");
   desc.add<std::string>("anglesTensorName_x","input_2");
   desc.add<std::string>("outputTensorName","Identity");
