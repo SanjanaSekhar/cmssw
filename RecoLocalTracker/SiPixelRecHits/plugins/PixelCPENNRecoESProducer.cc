@@ -54,6 +54,7 @@ PixelCPENNRecoESProducer::PixelCPENNRecoESProducer(const edm::ParameterSet& p) {
 //  tfDnnToken_(esConsumes(edm::ESInputTag("", tfDnnLabel_))) {
   std::string myname = p.getParameter<std::string>("ComponentName");
   tfDnnLabel_ = p.getParameter<std::string>("tfDnnLabel");
+  printf("tfDnnLabel_ = %s\n",tfDnnLabel_.c_str());
   //filename_ = p.getParameter<std::string>("FileName");
   
   useLAFromDB_ = p.getParameter<bool>("useLAFromDB");
@@ -87,14 +88,16 @@ std::unique_ptr<PixelClusterParameterEstimator> PixelCPENNRecoESProducer::produc
   //if (useLAFromDB_ || doLorentzFromAlignment_) {
   //  lorentzAngleProduct = &iRecord.get(lorentzAngleToken_);
   //}
-
+  const tensorflow::Session* session = nullptr;
+  session = iRecord.get(tfDnnToken_).getSession();
   return std::make_unique<PixelCPENNReco>(pset_,
                                                 &iRecord.get(magfieldToken_),
                                                 iRecord.get(pDDToken_),
                                                 iRecord.get(hTTToken_),
                                                 //lorentzAngleProduct,
                                                 //&iRecord.get(templateDBobjectToken_),
-                                                iRecord.get(tfDnnToken_).getSession());
+                                                //iRecord.getData(tfDnnToken_).getSession()
+                                                session);
 }
 
 void PixelCPENNRecoESProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

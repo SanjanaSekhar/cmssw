@@ -306,12 +306,12 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	clustMatrix_temp[irow][icol] = float(pix.adc)/25000.;
   }
 }
-	printf("BEFORE DOUBLE PIX FIX\n");
-	for(int i = 0; i < TXSIZE ; i++){
-		for(int j = 0; j < TYSIZE; j++)
-			printf("%.2f ",clustMatrix_temp[i][j]);
-		printf("\n");
-	}
+	//printf("BEFORE DOUBLE PIX FIX\n");
+	//for(int i = 0; i < TXSIZE ; i++){
+	//	for(int j = 0; j < TYSIZE; j++)
+	//		printf("%.2f ",clustMatrix_temp[i][j]);
+	//	printf("\n");
+	//}
 /*
   // Make and fill the bool arrays flagging double pixels
   bool xdouble[mrow], ydouble[mcol];
@@ -474,7 +474,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
       // convert microns to cms
       theClusterParam.NNXrec_ = output_x[0].matrix<float>()(0,0);
       
-      //printf("x_nn[%i] = %f\n",count,x_nn[count]);
+      printf("theClusterParam.NNXrec_ = %f\n",theClusterParam.NNXrec_);
       //if(isnan(x_nn[count])){
       //for(int i=0;i<TXSIZE;i++){
       //  for(int j=0;j<TYSIZE;j++)
@@ -782,7 +782,7 @@ void PixelCPENNReco::fillPSetDescription(edm::ParameterSetDescription& desc) {
   //desc.add<int>("speed", -2);
   //desc.add<bool>("UseClusterSplitter", false);
   //some defaults for testing
-  desc.add<std::string>("graphPath_x","graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
+  desc.add<std::string>("graphPath_x","/uscms_data/d3/ssekhar/CMSSW_12_6_0_pre4/src/graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
   desc.add<std::string>("inputTensorName_x","input_1");
   desc.add<std::string>("anglesTensorName_x","input_2");
   desc.add<std::string>("outputTensorName","Identity");
