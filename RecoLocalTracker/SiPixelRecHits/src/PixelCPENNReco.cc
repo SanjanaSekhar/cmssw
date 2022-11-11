@@ -50,7 +50,7 @@ PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
                                            const TrackerTopology& ttopo,
                                            //const SiPixelLorentzAngle* lorentzAngle,
                                            //const SiPixelTemplateDBObject* templateDBobject,
-                                           const tensorflow::Session* session_x
+                                           const tensorflow::Session* session
                                            )
     : PixelCPEBase(conf, mag, geom, ttopo, nullptr, nullptr, nullptr, nullptr,59){
    // inputTensorName_x(conf.getParameter<std::string>("inputTensorName_x")),
@@ -101,7 +101,9 @@ PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
   LogDebug("PixelCPENNReco::PixelCPENNReco:") << "Template speed = " << speed_ << "\n";
 
   UseClusterSplitter_ = conf.getParameter<bool>("UseClusterSplitter");
-  */	inputTensorName_x = conf.getParameter<std::string>("inputTensorName_x");
+  */	
+	session_x = session;
+	inputTensorName_x = conf.getParameter<std::string>("inputTensorName_x");
       anglesTensorName_x = conf.getParameter<std::string>("anglesTensorName_x");
       outputTensorName_ = conf.getParameter<std::string>("outputTensorName");
 	 cpe = conf.getParameter<std::string>("cpe");
@@ -147,11 +149,11 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   //cout << "PixelCPENNReco : ID = " << ID << endl;
 */
   if(fpix){
-    throw cms::Exception("PixelCPENNReco::localPosition :") << "graph is trained on BPIX only";
+  //  throw cms::Exception("PixelCPENNReco::localPosition :") << "graph is trained on BPIX only";
   }
   // how to access layer info from det_id? can i use the tracker topology token here? so i have to add it to the det_id or 
   if(ttopo_.pxbLayer(theDetParam.theDet->geographicalId()) != 1){
-    throw cms::Exception("PixelCPENNReco::localPosition :") << "graph is trained on BPIX L1 only";
+   // throw cms::Exception("PixelCPENNReco::localPosition :") << "graph is trained on BPIX L1 only";
   }
 
  // SiPixelTemplate templ(thePixelTemp_);
