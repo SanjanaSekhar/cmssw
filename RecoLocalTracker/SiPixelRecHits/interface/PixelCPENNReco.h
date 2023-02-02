@@ -63,6 +63,7 @@ public:
                        const TrackerTopology &,
                      //  const SiPixelLorentzAngle *,
                      //  const SiPixelTemplateDBObject *,
+                       const tensorflow::Session *,
                        const tensorflow::Session *
                        );
 
@@ -95,12 +96,13 @@ private:
   int forwardTemplateID_;
   std::string templateDir_;
 
-  std::string graphPath_x;
+  std::string graphPath_x, graphPath_y;
   std::string inputTensorName_x, inputTensorName_y, anglesTensorName_x, anglesTensorName_y;
-  std::string outputTensorName_;
+  std::string outputTensorName_x, outputTensorName_y;
   //std::string     fRootFileName;
 
-  const tensorflow::Session* session_x;  
+  const tensorflow::Session* session_x; 
+  const tensorflow::Session* session_y; 
   //int MAXCLUSTER = 80000;
   //float micronsToCm = 1e-4;
   std::string cpe; 

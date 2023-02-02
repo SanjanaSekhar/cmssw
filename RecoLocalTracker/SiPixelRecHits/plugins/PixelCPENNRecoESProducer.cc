@@ -43,10 +43,10 @@ private:
   edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> hTTToken_;
   edm::ESGetToken<SiPixelLorentzAngle, SiPixelLorentzAngleRcd> lorentzAngleToken_;
   edm::ESGetToken<SiPixelTemplateDBObject, SiPixelTemplateDBObjectESProducerRcd> templateDBobjectToken_;
-  std::string tfDnnLabel_;
-  edm::ESGetToken<TfGraphDefWrapper, TfGraphRecord> tfDnnToken_;
+  std::string tfDnnLabel_x, tfDnnLabel_y;
+  edm::ESGetToken<TfGraphDefWrapper, TfGraphRecord> tfDnnToken_x, tfDnnToken_y;
   
-  const tensorflow::Session *session;
+  const tensorflow::Session *session_x, *session_y;
 
 
   edm::ParameterSet pset_;
@@ -61,10 +61,12 @@ using namespace edm;
 PixelCPENNRecoESProducer::PixelCPENNRecoESProducer(const edm::ParameterSet& p) {
 //  tfDnnToken_(esConsumes(edm::ESInputTag("", tfDnnLabel_))) {
   std::string myname = p.getParameter<std::string>("ComponentName");
-  tfDnnLabel_ = p.getParameter<std::string>("tfDnnLabel");
-  printf("tfDnnLabel_ = %s\n",tfDnnLabel_.c_str());
+  tfDnnLabel_x = p.getParameter<std::string>("tfDnnLabel_x");
+  tfDnnLabel_y = p.getParameter<std::string>("tfDnnLabel_y");
+  //printf("tfDnnLabel_x = %s\n",tfDnnLabel_x.c_str());
   //filename_ = p.getParameter<std::string>("FileName");
-  session = nullptr;
+  session_x = nullptr;
+  session_y = nullptr;
   useLAFromDB_ = p.getParameter<bool>("useLAFromDB");
   doLorentzFromAlignment_ = p.getParameter<bool>("doLorentzFromAlignment");
 
@@ -75,8 +77,8 @@ PixelCPENNRecoESProducer::PixelCPENNRecoESProducer(const edm::ParameterSet& p) {
   hTTToken_ = c.consumes();
  // templateDBobjectToken_ = c.consumes();
 
-  tfDnnToken_ = c.consumes(edm::ESInputTag("", tfDnnLabel_));
-
+  tfDnnToken_x = c.consumes(edm::ESInputTag("", tfDnnLabel_x));
+  tfDnnToken_y = c.consumes(edm::ESInputTag("", tfDnnLabel_y));
   //if (useLAFromDB_ || doLorentzFromAlignment_) {
    // char const* laLabel = doLorentzFromAlignment_ ? "fromAlignment" : "";
     //lorentzAngleToken_ = c.consumes(edm::ESInputTag("", laLabel));
@@ -97,7 +99,8 @@ std::unique_ptr<PixelClusterParameterEstimator> PixelCPENNRecoESProducer::produc
   //  lorentzAngleProduct = &iRecord.get(lorentzAngleToken_);
   //}
   //const tensorflow::Session* session = nullptr;
-  session = iRecord.get(tfDnnToken_).getSession();
+  session_x = iRecord.get(tfDnnToken_x).getSession();
+  session_y = iRecord.get(tfDnnToken_y).getSession();
   return std::make_unique<PixelCPENNReco>(pset_,
                                                 &iRecord.get(magfieldToken_),
                                                 iRecord.get(pDDToken_),
@@ -105,7 +108,8 @@ std::unique_ptr<PixelClusterParameterEstimator> PixelCPENNRecoESProducer::produc
                                                 //lorentzAngleProduct,
                                                 //&iRecord.get(templateDBobjectToken_),
                                                 //iRecord.getData(tfDnnToken_).getSession()
-                                                session);
+                                                session_x,
+                                                session_y);
 }
 
 void PixelCPENNRecoESProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
@@ -119,7 +123,8 @@ void PixelCPENNRecoESProducer::fillDescriptions(edm::ConfigurationDescriptions& 
   PixelCPENNReco::fillPSetDescription(desc);
   // specific to PixelCPENNRecoESProducer
   desc.add<std::string>("ComponentName", "PixelCPENNReco");
-  desc.add<std::string>("tfDnnLabel", "tracksterSelectionTf");
+  desc.add<std::string>("tfDnnLabel_x", "NNCPE_x");
+  desc.add<std::string>("tfDnnLabel_y", "NNCPE_y");
 
   //desc.add<std::string>("FileName","/uscms_data/d3/ssekhar/CMSSW_11_1_2/src/TrackerStuff/PixelHitsCNN/data/graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
 

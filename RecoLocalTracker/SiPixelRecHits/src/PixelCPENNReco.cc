@@ -50,7 +50,8 @@ PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
                                            const TrackerTopology& ttopo,
                                            //const SiPixelLorentzAngle* lorentzAngle,
                                            //const SiPixelTemplateDBObject* templateDBobject,
-                                           const tensorflow::Session* session
+                                           const tensorflow::Session* session_x_,
+                                           const tensorflow::Session* session_y_
                                            )
     : PixelCPEBase(conf, mag, geom, ttopo, nullptr, nullptr, nullptr, nullptr,59){
    // inputTensorName_x(conf.getParameter<std::string>("inputTensorName_x")),
@@ -102,12 +103,17 @@ PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
 
   UseClusterSplitter_ = conf.getParameter<bool>("UseClusterSplitter");
   */	
-	session_x = session;
+	session_x = session_x_;
+  session_y = session_y_;
 	inputTensorName_x = conf.getParameter<std::string>("inputTensorName_x");
       anglesTensorName_x = conf.getParameter<std::string>("anglesTensorName_x");
-      outputTensorName_ = conf.getParameter<std::string>("outputTensorName");
-	 cpe = conf.getParameter<std::string>("cpe");
+      outputTensorName_x = conf.getParameter<std::string>("outputTensorName_x");
 	graphPath_x = conf.getParameter<std::string>("graphPath_x");
+  inputTensorName_y = conf.getParameter<std::string>("inputTensorName_y");
+      anglesTensorName_y = conf.getParameter<std::string>("anglesTensorName_y");
+      outputTensorName_y = conf.getParameter<std::string>("outputTensorName_y");
+  graphPath_y = conf.getParameter<std::string>("graphPath_y");
+   cpe = conf.getParameter<std::string>("cpe");
 }
 
 //-----------------------------------------------------------------------------
@@ -149,11 +155,13 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   //cout << "PixelCPENNReco : ID = " << ID << endl;
 */
   if(fpix){
-  //  throw cms::Exception("PixelCPENNReco::localPosition :") << "graph is trained on BPIX only";
+   edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
+                                          << "Network not trained on FPIX";
   }
   // how to access layer info from det_id? can i use the tracker topology token here? so i have to add it to the det_id or 
   if(ttopo_.pxbLayer(theDetParam.theDet->geographicalId()) != 1){
-   // throw cms::Exception("PixelCPENNReco::localPosition :") << "graph is trained on BPIX L1 only";
+     edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
+                                          << "Network only trained on L1";
   }
 
  // SiPixelTemplate templ(thePixelTemp_);
@@ -217,10 +225,11 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   assert(mrow > 0);
   assert(mcol > 0);
 
-  float clustMatrix[TXSIZE][TYSIZE], clustMatrix_temp[TXSIZE][TYSIZE], clustMatrix_x[TXSIZE];
+  float clustMatrix[TXSIZE][TYSIZE], clustMatrix_temp[TXSIZE][TYSIZE], clustMatrix_x[TXSIZE], clustMatrix_y[TYSIZE];
   memset(clustMatrix, 0, sizeof(float) * TXSIZE * TYSIZE);
   memset(clustMatrix_temp, 0, sizeof(float) * TXSIZE * TYSIZE);
   memset(clustMatrix_x, 0, sizeof(float) * TXSIZE);
+  memset(clustMatrix_y, 0, sizeof(float) * TYSIZE);
 
   int n_double_x = 0, n_double_y = 0;
   int mid_x = 0, mid_y = 0;    
@@ -271,16 +280,16 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
     int offset_y = 10 - mid_y;
       
 
-	printf("Cluster size: %i\n",theClusterParam.theCluster->size());
+	//printf("Cluster size: %i\n",theClusterParam.theCluster->size());
   // Copy clust's pixels (calibrated in electrons) into clusMatrix;
   for (int i = 0; i < theClusterParam.theCluster->size(); ++i) {
     auto pix = theClusterParam.theCluster->pixel(i);
     int irow = int(pix.x) - row_offset + offset_x;
     int icol = int(pix.y) - col_offset + offset_y;
 	if(std::isnan(pix.adc)) printf("PIX.ADC IS NAN");
-	printf("irow = %i, icol = %i, pix.adc = %i, mrow = %i, offset_x = %i, mcol = %i, offset_y = %i\n",irow,icol,pix.adc,mrow,offset_x,mcol,offset_y);	
+	//printf("irow = %i, icol = %i, pix.adc = %i, mrow = %i, offset_x = %i, mcol = %i, offset_y = %i\n",irow,icol,pix.adc,mrow,offset_x,mcol,offset_y);	
     if ((irow >= mrow+offset_x) || (icol >= mcol+offset_y)){
-        printf("irow or icol exceeded, SKIPPING. irow = %i, mrow = %i, offset_x = %i,icol = %i, mcol = %i, offset_y = %i\n",irow,mrow,offset_x,icol,mcol,offset_y);
+        //printf("irow or icol exceeded, SKIPPING. irow = %i, mrow = %i, offset_x = %i,icol = %i, mcol = %i, offset_y = %i\n",irow,mrow,offset_x,icol,mcol,offset_y);
         continue;
       }
       if ((int)pix.x == 79 || (int)pix.x == 80){
@@ -388,6 +397,11 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
         clustMatrix_x[i] += clustMatrix[i][j];
 	}
     }
+    for(int i = 0;i < TYSIZE; i++){
+      for(int j = 0; j < TXSIZE; j++){
+        clustMatrix_y[i] += clustMatrix[j][i];
+  }
+    }
   // Output:
   float nonsense = -99999.9f;  // nonsense init value
   theClusterParam.NNXrec_ = theClusterParam.NNYrec_ = theClusterParam.NNSigmaX_ =
@@ -433,63 +447,50 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   //========================================================================================
         // define a tensor and fill it with cluster projection
         tensorflow::Tensor cluster_flat_x(tensorflow::DT_FLOAT, {1,TXSIZE,1});
-      tensorflow::Tensor cluster_(tensorflow::DT_FLOAT, {1,TXSIZE,TYSIZE,1});
+        tensorflow::Tensor cluster_flat_y(tensorflow::DT_FLOAT, {1,TYSIZE,1});
+      //tensorflow::Tensor cluster_(tensorflow::DT_FLOAT, {1,TXSIZE,TYSIZE,1});
         // angles
       tensorflow::Tensor angles(tensorflow::DT_FLOAT, {1,2});
       angles.tensor<float,2>()(0, 0) = theClusterParam.cotalpha;
       angles.tensor<float,2>()(0, 1) = theClusterParam.cotbeta;
 
-      for (int i = 0; i < TXSIZE; i++) {
-        cluster_flat_x.tensor<float,3>()(0, i, 0) = 0;
-        for (int j = 0; j < TYSIZE; j++){
-            //1D projection in x
-          cluster_flat_x.tensor<float,3>()(0, i, 0) = clustMatrix_x[i];
-          cluster_.tensor<float,4>()(0, i, j, 0) = clustMatrix[i][j];
-          
-          //printf("%i ",int(clusbuf[i][j]));
-
-        }
-          //printf("\n");
-      }
+      for (int i = 0; i < TXSIZE; i++) 
+        cluster_flat_x.tensor<float,3>()(0, i, 0) = clustMatrix_x[i];
+        for (int j = 0; j < TYSIZE; j++)
+          cluster_flat_y.tensor<float,3>()(0, j, 0) = clustMatrix_y[j];
+   
       //  Determine current time
 
-	for(int i = 0 ; i < TXSIZE ; i++){
-		for(int j = 0 ; j < TYSIZE ; j++)
-			printf("%.2f ",clustMatrix[i][j]);
-		printf("\n");
-	}
-	printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
-	for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
-          //gettimeofday(&now0, &timz);
+	// for(int i = 0 ; i < TXSIZE ; i++){
+	// 	for(int j = 0 ; j < TYSIZE ; j++)
+	// 		printf("%.2f ",clustMatrix[i][j]);
+	// 	printf("\n");
+	// }
+	// printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
+	// for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
+         //gettimeofday(&now0, &timz);
         // define the output and run
-      std::vector<tensorflow::Tensor> output_x;
-      if(cpe=="cnn2d"){ //gettimeofday(&now0, &timz);
-	printf("INSIDE CNN2D BLOCK\n");
-        tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_}, {anglesTensorName_x,angles}}, {outputTensorName_}, &output_x);
+      std::vector<tensorflow::Tensor> output_x, output_y;
+  //gettimeofday(&now0, &timz);
+	 printf("INSIDE CNN1D X BLOCK\n");
+       tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_x}, &output_x);
        // gettimeofday(&now1, &timz);
-      }
-      else { // gettimeofday(&now0, &timz);
-        printf("INSIDE CNN1D BLOCK\n");
-	tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_}, &output_x);
+  
+        // gettimeofday(&now0, &timz);
+        printf("INSIDE CNN1D Y BLOCK\n");
+	tensorflow::run(const_cast<tensorflow::Session *>(session_y), {{inputTensorName_y,cluster_flat_y}, {anglesTensorName_y,angles}}, {outputTensorName_y}, &output_y);
        // gettimeofday(&now1, &timz);
-      }
+      
       // convert microns to cms
       theClusterParam.NNXrec_ = output_x[0].matrix<float>()(0,0);
-      
-      printf("theClusterParam.NNXrec_ = %f\n",theClusterParam.NNXrec_);
-      //if(isnan(x_nn[count])){
-      //for(int i=0;i<TXSIZE;i++){
-      //  for(int j=0;j<TYSIZE;j++)
-      //    printf("%i ",int(clusbuf[i][j]));
-      //  printf("\n");
-      //}
-      //printf("\n");}
       theClusterParam.NNXrec_ = theClusterParam.NNXrec_ + pixelsize_x*(mid_x); 
-      //for testing purposes
-      theClusterParam.NNYrec_ = 500;
       theClusterParam.NNSigmaX_ = 1;
+  
+      theClusterParam.NNYrec_ = output_y[0].matrix<float>()(0,0);
+      theClusterParam.NNXrec_ = theClusterParam.NNYrec_ + pixelsize_y*(mid_y);
       theClusterParam.NNSigmaY_ = 1;
-      if(isnan(NNXrec1_) or NNXrec1_>=999e4) theClusterParam.ierr = 12345;
+
+      if(isnan(theClusterParam.NNXrec_) or theClusterParam.NNXrec_>=999e4 or isnan(theClusterParam.NNYrec_) or theClusterParam.NNYrec_>=999e4) theClusterParam.ierr = 12345;
       else theClusterParam.ierr = 0.;
 
   // Check exit status
@@ -515,88 +516,6 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
       theClusterParam.NNYrec_ = theDetParam.theTopol->localY(theClusterParam.theCluster->y()) + lorentzshiftY;
     }
   } 
-  /*
-  else if UNLIKELY (UseClusterSplitter_ && theClusterParam.templQbin_ == 0) {
-    edm::LogError("PixelCPENNReco") << " PixelCPENNReco: Qbin = 0 but using cluster splitter, we should "
-                                             "never be here !!!!!!!!!!!!!!!!!!!!!! \n"
-                                          << "(int)UseClusterSplitter_ = " << (int)UseClusterSplitter_ << endl;
-
-    //ierr =
-    //PixelTempSplit( ID, fpix, cotalpha_, cotbeta_,
-    //		clust_array_2d, ydouble, xdouble,
-    //		templ,
-    //		templYrec1_, templYrec2_, templSigmaY_, templProbY_,
-    //		templXrec1_, templXrec2_, templSigmaX_, templProbX_,
-    //		templQbin_ );
-
-    // Commented for now (3/10/17) until we figure out how to resuscitate 2D template splitter
-    ///      std::vector< SiPixelTemplateStore2D > thePixelTemp2D_;
-    ///SiPixelTemplate2D::pushfile(ID, thePixelTemp2D_);
-    ///SiPixelTemplate2D templ2D_(thePixelTemp2D_);
-
-    theClusterParam.ierr = -123;
-    */
-    /*
-       float dchisq;
-       float templProbQ_;
-       SiPixelTemplateSplit::PixelTempSplit( ID, theClusterParam.cotalpha, theClusterParam.cotbeta,
-       clust_array_2d,
-       ydouble, xdouble,
-       templ,
-       templYrec1_, templYrec2_, theClusterParam.templSigmaY_, theClusterParam.templProbY_,
-       templXrec1_, templXrec2_, theClusterParam.templSigmaX_, theClusterParam.templProbX_,
-       theClusterParam.templQbin_,
-       templProbQ_,
-       true,
-       dchisq,
-       templ2D_ );
-       
-       */
-  /*
-    if (theClusterParam.ierr != 0) {
-      // Template reco has failed, compute position estimates based on cluster center of gravity + Lorentz drift
-      // Future improvement would be to call generic reco instead
-
-      // ggiurgiu@jhu.edu, 12/09/2010 : trk angles needed to correct for bows/kinks
-      if (theClusterParam.with_track_angle) {
-        theClusterParam.templXrec_ =
-            theDetParam.theTopol->localX(theClusterParam.theCluster->x(), theClusterParam.loc_trk_pred) + lorentzshiftX;
-        theClusterParam.templYrec_ =
-            theDetParam.theTopol->localY(theClusterParam.theCluster->y(), theClusterParam.loc_trk_pred) + lorentzshiftY;
-      } else {
-        edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
-                                              << "Should never be here. PixelCPENNReco should always be called "
-                                                 "with track angles. This is a bad error !!! ";
-        theClusterParam.templXrec_ = theDetParam.theTopol->localX(theClusterParam.theCluster->x()) + lorentzshiftX;
-        theClusterParam.templYrec_ = theDetParam.theTopol->localY(theClusterParam.theCluster->y()) + lorentzshiftY;
-      }
-    } else {
-      // go from micrometer to centimeter
-      //NNXrec1_ *= micronsToCm;
-      //NNYrec1_ *= micronsToCm;
-      templXrec1_ *= micronsToCm;
-      templYrec1_ *= micronsToCm;
-      templXrec2_ *= micronsToCm;
-      templYrec2_ *= micronsToCm;
-
-      // go back to the module coordinate system
-      NNXrec1_ += lp.x();
-      NNYrec1_ += lp.y();
-      templXrec1_ += lp.x();
-      templYrec1_ += lp.y();
-      templXrec2_ += lp.x();
-      templYrec2_ += lp.y();
-
-      // calculate distance from each hit to the track and choose the hit closest to the track
-      float distX1 = std::abs(templXrec1_ - theClusterParam.trk_lp_x);
-      float distX2 = std::abs(templXrec2_ - theClusterParam.trk_lp_x);
-      float distY1 = std::abs(templYrec1_ - theClusterParam.trk_lp_y);
-      float distY2 = std::abs(templYrec2_ - theClusterParam.trk_lp_y);
-      theClusterParam.templXrec_ = (distX1 < distX2 ? templXrec1_ : templXrec2_);
-      theClusterParam.templYrec_ = (distY1 < distY2 ? templYrec1_ : templYrec2_);
-    }
-  }  // else if ( UseClusterSplitter_ && templQbin_ == 0 )
-*/
   else  // apparenly this is the good one!
   {
     // go from micrometer to centimeter
@@ -787,7 +706,11 @@ void PixelCPENNReco::fillPSetDescription(edm::ParameterSetDescription& desc) {
   desc.add<std::string>("graphPath_x","/uscms_data/d3/ssekhar/CMSSW_12_6_0_pre4/src/graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
   desc.add<std::string>("inputTensorName_x","input_1");
   desc.add<std::string>("anglesTensorName_x","input_2");
-  desc.add<std::string>("outputTensorName","Identity");
+  desc.add<std::string>("outputTensorName_x","Identity");
+  desc.add<std::string>("graphPath_y","/uscms_data/d3/ssekhar/CMSSW_12_6_0_pre4/src/graph_y_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
+  desc.add<std::string>("inputTensorName_y","input_1");
+  desc.add<std::string>("anglesTensorName_y","input_2");
+  desc.add<std::string>("outputTensorName_y","Identity");
   desc.add<bool>("use_det_angles", false);
   desc.add<std::string>("cpe", "cnn1d");
 }
