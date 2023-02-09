@@ -40,8 +40,12 @@ L1TStage2CaloLayer1::L1TStage2CaloLayer1(const edm::ParameterSet& ps)
       ecalTPSourceSentLabel_(ps.getParameter<edm::InputTag>("ecalTPSourceSent").label()),
       hcalTPSourceSent_(consumes<HcalTrigPrimDigiCollection>(ps.getParameter<edm::InputTag>("hcalTPSourceSent"))),
       hcalTPSourceSentLabel_(ps.getParameter<edm::InputTag>("hcalTPSourceSent").label()),
+<<<<<<< HEAD
       CaloTowerCollectionData_(
           consumes<l1t::CaloTowerBxCollection>(ps.getParameter<edm::InputTag>("CaloTowerCollectionData"))),
+=======
+      CaloTowerCollectionData_(consumes<l1t::CaloTowerBxCollection>(ps.getParameter<edm::InputTag>("CaloTowerCollectionData"))),
+>>>>>>> 768ecfd51f3 (HCAL Fb DQM monitoring at layer1 - test 12_6_3)
       CaloTowerCollectionDataLabel_(ps.getParameter<edm::InputTag>("CaloTowerCollectionData").label()),
       fedRawData_(consumes<FEDRawDataCollection>(ps.getParameter<edm::InputTag>("fedRawDataLabel"))),
       histFolder_(ps.getParameter<std::string>("histFolder")),
@@ -386,6 +390,7 @@ void L1TStage2CaloLayer1::dqmAnalyze(const edm::Event& event,
       eventMonitors.hcalTPRawEtSent_->Fill(sentTp.SOI_compressedEt());
       eventMonitors.hcalOccSent_->Fill(ieta, iphi);
     }
+<<<<<<< HEAD
 
     // 6 HCAL fine grain bits from uHTR readout
     bool uHTRfg0 = sentTp.SOI_fineGrain(0);
@@ -413,6 +418,8 @@ void L1TStage2CaloLayer1::dqmAnalyze(const edm::Event& event,
     if (uHTRfg5) {
       eventMonitors.hcalOccSentFg5_->Fill(ieta, iphi);
     }
+=======
+>>>>>>> 768ecfd51f3 (HCAL Fb DQM monitoring at layer1 - test 12_6_3)
 
     if (towerMasked || caloLayer1OutOfRun) {
       // Do not compare if we have a mask applied
@@ -427,6 +434,7 @@ void L1TStage2CaloLayer1::dqmAnalyze(const edm::Event& event,
       continue;
     }
 
+<<<<<<< HEAD
     // 6 HCAL fine grain bits from Layer1 readout
     // Fg 0 is always there in ctp7 payload, set as bit 8 after Et bits in unpacked towerDatum
     // When additionalFB flag is set:
@@ -539,6 +547,97 @@ void L1TStage2CaloLayer1::dqmAnalyze(const edm::Event& event,
       }
     }
 
+=======
+    // HCAL LLP trigger feature bits monitoring
+    if (abs(ieta) < 29) {
+      // Input feature bits readout at uHTR vs. Layer1
+      if (recdTp.SOI_fineGrain(0)) {
+        eventMonitors.hcalOccRecdFg0_->Fill(ieta, iphi);
+      }
+      if (recdTp.SOI_fineGrain(1)) {
+        eventMonitors.hcalOccRecdFg1_->Fill(ieta, iphi);
+      }
+      if (recdTp.SOI_fineGrain(2)) {
+        eventMonitors.hcalOccRecdFg2_->Fill(ieta, iphi);
+      }
+      if (recdTp.SOI_fineGrain(3)) {
+        eventMonitors.hcalOccRecdFg3_->Fill(ieta, iphi);
+      }
+      if (recdTp.SOI_fineGrain(4)) {
+        eventMonitors.hcalOccRecdFg4_->Fill(ieta, iphi);
+      }
+      if (recdTp.SOI_fineGrain(5)) {
+        eventMonitors.hcalOccRecdFg5_->Fill(ieta, iphi);
+      }
+      if (sentTp.SOI_fineGrain(0)) {
+        eventMonitors.hcalOccSentFg0_->Fill(ieta, iphi);
+      }
+      if (sentTp.SOI_fineGrain(1)) {
+        eventMonitors.hcalOccSentFg1_->Fill(ieta, iphi);
+      }
+      if (sentTp.SOI_fineGrain(2)) {
+        eventMonitors.hcalOccSentFg2_->Fill(ieta, iphi);
+      }
+      if (sentTp.SOI_fineGrain(3)) {
+        eventMonitors.hcalOccSentFg3_->Fill(ieta, iphi);
+      }
+      if (sentTp.SOI_fineGrain(4)) {
+        eventMonitors.hcalOccSentFg4_->Fill(ieta, iphi);
+      }
+      if (sentTp.SOI_fineGrain(5)) {
+        eventMonitors.hcalOccSentFg5_->Fill(ieta, iphi);
+      }
+      if (not (recdTp.SOI_fineGrain(0) == sentTp.SOI_fineGrain(0))) {
+        eventMonitors.hcalOccFg0Discrepancy_->Fill(ieta, iphi);
+      }
+      if (not (recdTp.SOI_fineGrain(1) == sentTp.SOI_fineGrain(1))) {
+        eventMonitors.hcalOccFg1Discrepancy_->Fill(ieta, iphi);
+      }
+      if (not (recdTp.SOI_fineGrain(2) == sentTp.SOI_fineGrain(2))) {
+        eventMonitors.hcalOccFg2Discrepancy_->Fill(ieta, iphi);
+      }
+      if (not (recdTp.SOI_fineGrain(3) == sentTp.SOI_fineGrain(3))) {
+        eventMonitors.hcalOccFg3Discrepancy_->Fill(ieta, iphi);
+      }
+      if (not (recdTp.SOI_fineGrain(4) == sentTp.SOI_fineGrain(4))) {
+        eventMonitors.hcalOccFg4Discrepancy_->Fill(ieta, iphi);
+      }
+      if (not (recdTp.SOI_fineGrain(5) == sentTp.SOI_fineGrain(5))) {
+        eventMonitors.hcalOccFg5Discrepancy_->Fill(ieta, iphi);
+      }
+      // Construct a 6-bit integer from the 6 fine grain bits at uHTR (will change to at Layer1 readout later)
+      uint64_t fg_bits = 0;
+      for (int index = 0; index < 6; index++) {
+        fg_bits |= sentTp.SOI_fineGrain(index) << index;
+      }
+      // Current 6:1 LUT in fw
+      const uint64_t HCalFbLUT = 0xAAAAAAAAAAAAAAAA;
+      // Expected feature bit output
+      const bool fb_Expd = (HCalFbLUT >> fg_bits) & 1;
+      // Actual feature bit output in data
+      uint32_t tower_hwqual = 0;
+      for (auto tower = caloTowerDataCol->begin(0); tower != caloTowerDataCol->end(0); ++tower) {
+        if (not (tower->hwEta() == ieta && tower->hwPhi() == iphi)) {
+          continue;
+        }
+        tower_hwqual = tower->hwQual();
+      }
+      // CaloTower hwQual is 4-bit long, HCAL Fb is set at the 2nd bit (counting from 0)
+      const bool fb_Data = ((tower_hwqual & 0b0100) >> 2) & 1;
+      // Fill Fb Occ and compare between expected and data
+      if (fb_Expd) {
+        eventMonitors.hcalOccLLPFbExpd_->Fill(ieta, iphi);
+      }
+      if (fb_Data) {
+        eventMonitors.hcalOccLLPFbData_->Fill(ieta, iphi);
+      }
+      if (not (fb_Expd == fb_Data)) {
+        eventMonitors.hcalOccLLPFbDiscrepancy_->Fill(ieta, iphi);
+      }
+    }
+
+
+>>>>>>> 768ecfd51f3 (HCAL Fb DQM monitoring at layer1 - test 12_6_3)
     if (recdTp.SOI_compressedEt() > tpFillThreshold_) {
       eventMonitors.hcalTPRawEtRecd_->Fill(recdTp.SOI_compressedEt());
       eventMonitors.hcalOccupancy_->Fill(ieta, iphi);
@@ -552,7 +651,11 @@ void L1TStage2CaloLayer1::dqmAnalyze(const edm::Event& event,
     }
 
     const bool HetAgreement = sentTp.SOI_compressedEt() == recdTp.SOI_compressedEt();
+<<<<<<< HEAD
     if (HetAgreement && HfgAgreement && LLPfbAgreement) {
+=======
+    if (HetAgreement) {
+>>>>>>> 768ecfd51f3 (HCAL Fb DQM monitoring at layer1 - test 12_6_3)
       // Full match
       if (sentTp.SOI_compressedEt() > tpFillThreshold_) {
         eventMonitors.hcalOccSentAndRecd_->Fill(ieta, iphi);
@@ -582,6 +685,7 @@ void L1TStage2CaloLayer1::dqmAnalyze(const edm::Event& event,
         else
           eventMonitors.hcalOccNoMatch_->Fill(ieta, iphi);
       }
+<<<<<<< HEAD
       if (not(HfgAgreement && LLPfbAgreement)) {
         if (not Hfg0Agreement) {
           eventMonitors.hcalOccFg0Discrepancy_->Fill(ieta, iphi);
@@ -600,6 +704,8 @@ void L1TStage2CaloLayer1::dqmAnalyze(const edm::Event& event,
         }
         updateMismatch(event, 3, streamCache(event.streamID())->streamMismatchList);
       }
+=======
+>>>>>>> 768ecfd51f3 (HCAL Fb DQM monitoring at layer1 - test 12_6_3)
     }
   }
 
@@ -758,10 +864,17 @@ void L1TStage2CaloLayer1::bookHistograms(DQMStore::IBooker& ibooker,
       bookHcalOccupancy("hcalOccFg2Discrepancy", "HCal Fine Grain 2 Discrepancy between uHTR and Layer1");
   eventMonitors.hcalOccFg3Discrepancy_ =
       bookHcalOccupancy("hcalOccFg3Discrepancy", "HCal Fine Grain 3 Discrepancy between uHTR and Layer1");
+<<<<<<< HEAD
   //eventMonitors.hcalOccFg4Discrepancy_ =
   //    bookHcalOccupancy("hcalOccFg4Discrepancy", "HCal Fine Grain 4 Discrepancy between uHTR and Layer1");
   //eventMonitors.hcalOccFg5Discrepancy_ =
   //    bookHcalOccupancy("hcalOccFg5Discrepancy", "HCal Fine Grain 5 Discrepancy between uHTR and Layer1");
+=======
+  eventMonitors.hcalOccFg4Discrepancy_ =
+      bookHcalOccupancy("hcalOccFg4Discrepancy", "HCal Fine Grain 4 Discrepancy between uHTR and Layer1");
+  eventMonitors.hcalOccFg5Discrepancy_ =
+      bookHcalOccupancy("hcalOccFg5Discrepancy", "HCal Fine Grain 5 Discrepancy between uHTR and Layer1");
+>>>>>>> 768ecfd51f3 (HCAL Fb DQM monitoring at layer1 - test 12_6_3)
   eventMonitors.hcalOccSentFg0_ = bookHcalOccupancy("hcalOccSentFg0", "HCal Fine Grain 0 Occupancy at uHTR");
   eventMonitors.hcalOccSentFg1_ = bookHcalOccupancy("hcalOccSentFg1", "HCal Fine Grain 1 Occupancy at uHTR");
   eventMonitors.hcalOccSentFg2_ = bookHcalOccupancy("hcalOccSentFg2", "HCal Fine Grain 2 Occupancy at uHTR");

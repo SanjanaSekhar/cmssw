@@ -119,8 +119,13 @@ namespace CaloL1Information {
     dqm::reco::MonitorElement *hcalOccFg1Discrepancy_;
     dqm::reco::MonitorElement *hcalOccFg2Discrepancy_;
     dqm::reco::MonitorElement *hcalOccFg3Discrepancy_;
+<<<<<<< HEAD
     //dqm::reco::MonitorElement *hcalOccFg4Discrepancy_;
     //dqm::reco::MonitorElement *hcalOccFg5Discrepancy_;
+=======
+    dqm::reco::MonitorElement *hcalOccFg4Discrepancy_;
+    dqm::reco::MonitorElement *hcalOccFg5Discrepancy_;
+>>>>>>> 768ecfd51f3 (HCAL Fb DQM monitoring at layer1 - test 12_6_3)
     dqm::reco::MonitorElement *hcalOccRecdFg0_;
     dqm::reco::MonitorElement *hcalOccRecdFg1_;
     dqm::reco::MonitorElement *hcalOccRecdFg2_;
