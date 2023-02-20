@@ -315,7 +315,11 @@ namespace reco {
           stripFrontInvalidHits_(iConfig.getParameter<bool>("stripFrontInvalidHits")),
           stripBackInvalidHits_(iConfig.getParameter<bool>("stripBackInvalidHits")),
           stripAllInvalidHits_(iConfig.getParameter<bool>("stripAllInvalidHits")),
+<<<<<<< HEAD
           isPhase2_(iConfig.getParameter<bool>("isPhase2")),
+=======
+          isPhase2_(iConfig.getUntrackedParameter<bool>("isPhase2", false)),
+>>>>>>> 3c04e5821d1 (adjustments to TrackerTrackHitFilter to run the alignment common track refitter and selection sequence in Phase-2. Use std::optional in for SiStripClusterInfo)
           rejectBadStoNHits_(iConfig.getParameter<bool>("rejectBadStoNHits")),
           CMNSubtractionMode_(iConfig.getParameter<std::string>("CMNSubtractionMode")),
           detsToIgnore_(iConfig.getParameter<std::vector<uint32_t> >("detsToIgnore")),
