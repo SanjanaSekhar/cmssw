@@ -33,7 +33,7 @@
 //  std::atomic<tensorflow::GraphDef*> graphDef;
 //};
 
-
+//tensorflow::setLogging("3");
 class MagneticField;
 class PixelCPENNReco : public PixelCPEBase{
 public:

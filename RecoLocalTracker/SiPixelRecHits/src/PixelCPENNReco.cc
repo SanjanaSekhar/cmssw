@@ -102,7 +102,7 @@ PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
   LogDebug("PixelCPENNReco::PixelCPENNReco:") << "Template speed = " << speed_ << "\n";
 
   UseClusterSplitter_ = conf.getParameter<bool>("UseClusterSplitter");
-  */	
+  */	tensorflow::setLogging("0");	
 	session_x = session_x_;
   session_y = session_y_;
 	inputTensorName_x = conf.getParameter<std::string>("inputTensorName_x");
@@ -313,7 +313,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
                                           << "Pixel adc is NaN !!! ";
       }
-	printf("%i\n",pix.adc);	
+	//printf("%i\n",pix.adc);	
 	clustMatrix_temp[irow][icol] = float(pix.adc)/25000.;
   }
 }
@@ -346,7 +346,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
     int k=0,m=0;
     for(int i=0;i<TXSIZE;i++){
       if(i==double_row[m] and clustersize_x>1){
-        printf("TREATING DPIX%i IN X\n",m+1);
+        //printf("TREATING DPIX%i IN X\n",m+1);
         for(int j=0;j<TYSIZE;j++){
           clustMatrix[i][j]=clustMatrix_temp[k][j]/2.;
           clustMatrix[i+1][j]=clustMatrix_temp[k][j]/2.;
@@ -373,7 +373,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
     }
     for(int j=0;j<TYSIZE;j++){
       if(j==double_col[m] and clustersize_y>1){
-        printf("TREATING DPIX%i IN Y\n",m+1);
+        //printf("TREATING DPIX%i IN Y\n",m+1);
         for(int i=0;i<TXSIZE;i++){
           clustMatrix[i][j]=clustMatrix_temp[i][k]/2.;
           clustMatrix[i][j+1]=clustMatrix_temp[i][k]/2.;
@@ -472,12 +472,12 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
         // define the output and run
       std::vector<tensorflow::Tensor> output_x, output_y;
   //gettimeofday(&now0, &timz);
-	 printf("INSIDE CNN1D X BLOCK\n");
+	 //printf("INSIDE CNN1D X BLOCK\n");
        tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_x}, &output_x);
        // gettimeofday(&now1, &timz);
   
         // gettimeofday(&now0, &timz);
-        printf("INSIDE CNN1D Y BLOCK\n");
+        //printf("INSIDE CNN1D Y BLOCK\n");
 	tensorflow::run(const_cast<tensorflow::Session *>(session_y), {{inputTensorName_y,cluster_flat_y}, {anglesTensorName_y,angles}}, {outputTensorName_y}, &output_y);
        // gettimeofday(&now1, &timz);
       
@@ -703,11 +703,11 @@ void PixelCPENNReco::fillPSetDescription(edm::ParameterSetDescription& desc) {
   //desc.add<int>("speed", -2);
   //desc.add<bool>("UseClusterSplitter", false);
   //some defaults for testing
-  desc.add<std::string>("graphPath_x","/uscms_data/d3/ssekhar/CMSSW_12_6_0_pre4/src/graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
+  desc.add<std::string>("graphPath_x","/uscms_data/d3/ssekhar/CMSSW_12_6_2/src/graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
   desc.add<std::string>("inputTensorName_x","input_1");
   desc.add<std::string>("anglesTensorName_x","input_2");
   desc.add<std::string>("outputTensorName_x","Identity");
-  desc.add<std::string>("graphPath_y","/uscms_data/d3/ssekhar/CMSSW_12_6_0_pre4/src/graph_y_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
+  desc.add<std::string>("graphPath_y","/uscms_data/d3/ssekhar/CMSSW_12_6_2/src/graph_y_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
   desc.add<std::string>("inputTensorName_y","input_1");
   desc.add<std::string>("anglesTensorName_y","input_2");
   desc.add<std::string>("outputTensorName_y","Identity");
