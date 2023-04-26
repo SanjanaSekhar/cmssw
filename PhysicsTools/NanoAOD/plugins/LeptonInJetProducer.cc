@@ -91,6 +91,9 @@ void LeptonInJetProducer<T>::produce(edm::StreamID streamID, edm::Event &iEvent,
     int ele_pfmatch_index = -1;
     int mu_pfmatch_index = -1;
 
+    int ele_pfmatch_index = -1;
+    int mu_pfmatch_index = -1;
+
     // match to leading and closest electron or muon
     double dRmin(0.8), dRele(999), dRmu(999), dRtmp(999);
     for (unsigned int il(0); il < nEle; il++) {
