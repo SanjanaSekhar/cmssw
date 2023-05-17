@@ -161,7 +161,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   // how to access layer info from det_id? can i use the tracker topology token here? so i have to add it to the det_id or 
   if(ttopo_.pxbLayer(theDetParam.theDet->geographicalId()) != 1){
      edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
-                                          << "Network only trained on L1";
+                                          << "Network not trained on " << ttopo_.pxbLayer(theDetParam.theDet->geographicalId());
   }
 
  // SiPixelTemplate templ(thePixelTemp_);
@@ -280,7 +280,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
     int offset_y = 10 - mid_y;
       
 
-	//printf("Cluster size: %i\n",theClusterParam.theCluster->size());
+	printf("Cluster size in x: %i and y: %i\n",theClusterParam.theCluster->sizeX(),theClusterParam.theCluster->sizeY());
   // Copy clust's pixels (calibrated in electrons) into clusMatrix;
   for (int i = 0; i < theClusterParam.theCluster->size(); ++i) {
     auto pix = theClusterParam.theCluster->pixel(i);
@@ -337,6 +337,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
  // SiPixelTemplateReco::ClusMatrix clusterPayload{&clustMatrix[0][0], xdouble, ydouble, mrow, mcol};
 
   //deal with double width pixels
+  printf("n_double_x = %i, n_double_y = %i\n",n_double_x,n_double_y);
   if(n_double_x==1 && clustersize_x>12) {printf("clustersize_x > 12, SKIPPING\n"); } // NEED TO FIX CLUSTERSIZE COMPUTATION
     if(n_double_x==2 && clustersize_x>11) {printf("clustersize_x > 11, SKIPPING\n"); }
     if(n_double_y==1 && clustersize_y>20) {printf("clustersize_y = %i > 20, SKIPPING\n", clustersize_y);}
@@ -460,38 +461,52 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
           cluster_flat_y.tensor<float,3>()(0, j, 0) = clustMatrix_y[j];
    
       //  Determine current time
-
-	// for(int i = 0 ; i < TXSIZE ; i++){
-	// 	for(int j = 0 ; j < TYSIZE ; j++)
-	// 		printf("%.2f ",clustMatrix[i][j]);
-	// 	printf("\n");
-	// }
+/*
+	for(int i = 0 ; i < TXSIZE ; i++){
+		for(int j = 0 ; j < TYSIZE ; j++)
+	 		printf("%.2f ",clustMatrix[i][j]);
+	 	printf("\n");
+	 }
 	// printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
-	// for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
-         //gettimeofday(&now0, &timz);
+	 for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
+*/  
+       //gettimeofday(&now0, &timz);
         // define the output and run
       std::vector<tensorflow::Tensor> output_x, output_y;
   //gettimeofday(&now0, &timz);
-	 //printf("INSIDE CNN1D X BLOCK\n");
+	 printf("INSIDE CNN1D X BLOCK\n");
        tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_x}, &output_x);
        // gettimeofday(&now1, &timz);
   
         // gettimeofday(&now0, &timz);
-        //printf("INSIDE CNN1D Y BLOCK\n");
+        printf("INSIDE CNN1D Y BLOCK\n");
 	tensorflow::run(const_cast<tensorflow::Session *>(session_y), {{inputTensorName_y,cluster_flat_y}, {anglesTensorName_y,angles}}, {outputTensorName_y}, &output_y);
        // gettimeofday(&now1, &timz);
       
-      // convert microns to cms
+      
       theClusterParam.NNXrec_ = output_x[0].matrix<float>()(0,0);
       theClusterParam.NNXrec_ = theClusterParam.NNXrec_ + pixelsize_x*(mid_x); 
-      theClusterParam.NNSigmaX_ = 1;
-  
+      theClusterParam.NNSigmaX_ = exp(output_x[0].matrix<float>()(0,1));
+      //theClusterParam.NNSigmaX_ = theClusterParam.NNSigmaX_ + pixelsize_x*(mid_x);	
+      //printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_); 
       theClusterParam.NNYrec_ = output_y[0].matrix<float>()(0,0);
-      theClusterParam.NNXrec_ = theClusterParam.NNYrec_ + pixelsize_y*(mid_y);
-      theClusterParam.NNSigmaY_ = 1;
-
-      if(isnan(theClusterParam.NNXrec_) or theClusterParam.NNXrec_>=999e4 or isnan(theClusterParam.NNYrec_) or theClusterParam.NNYrec_>=999e4) theClusterParam.ierr = 12345;
-      else theClusterParam.ierr = 0.;
+      theClusterParam.NNYrec_ = theClusterParam.NNYrec_ + pixelsize_y*(mid_y);
+      theClusterParam.NNSigmaY_ = exp(output_y[0].matrix<float>()(0,1));
+      //theClusterParam.NNSigmaY_ = theClusterParam.NNSigmaY_ + pixelsize_y*(mid_y);
+      //printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
+      if(isnan(theClusterParam.NNXrec_) or theClusterParam.NNXrec_>=1300 or isnan(theClusterParam.NNYrec_) or theClusterParam.NNYrec_>=3150 or isnan(theClusterParam.NNSigmaX_) or theClusterParam.NNSigmaX_>=1300 or isnan(theClusterParam.NNSigmaY_) or theClusterParam.NNSigmaY_>=3150){
+	printf("====================== NN RECO HAS FAILED: POSITION LARGER THAN BUFFER ======================"); 
+	printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
+	theClusterParam.ierr = 12345;
+	for(int i = 0 ; i < TXSIZE ; i++){
+                for(int j = 0 ; j < TYSIZE ; j++)
+                        printf("%.2f ",clustMatrix[i][j]);
+                printf("\n");
+         }
+        // printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
+        for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
+     }
+        else theClusterParam.ierr = 0.;
 
   // Check exit status
   if UNLIKELY (theClusterParam.ierr != 0) {
@@ -521,11 +536,13 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
     // go from micrometer to centimeter
     theClusterParam.NNXrec_ *= micronsToCm;
     theClusterParam.NNYrec_ *= micronsToCm;
-
+    //theClusterParam.NNSigmaX_ *= micronsToCm;
+    //theClusterParam.NNSigmaY_ *= micronsToCm;
     // go back to the module coordinate system
-    theClusterParam.NNXrec_ += lp.x();
-    theClusterParam.NNYrec_ += lp.y();
-
+    //theClusterParam.NNXrec_ += lp.x();
+    //theClusterParam.NNYrec_ += lp.y();
+    //theClusterParam.NNSigmaX_ += lp.x();
+    //theClusterParam.NNSigmaY_ += lp.y();
     // Compute the Alignment Group Corrections [template ID should already be selected from call to reco procedure]
     /*
     if (doLorentzFromAlignment_) {
@@ -565,11 +582,11 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
    theClusterParam.probabilityX_ = 0.05;
   theClusterParam.probabilityY_ = 0.05;
   theClusterParam.probabilityQ_ = 0.05;
-  theClusterParam.qBin_ = 0.05;
+  theClusterParam.qBin_ = 2;
 
   if (theClusterParam.ierr == 0)  // always true here
     theClusterParam.hasFilledProb_ = true;
-
+  printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
   return LocalPoint(theClusterParam.NNXrec_, theClusterParam.NNYrec_);
 }
 
@@ -617,7 +634,18 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
                   theDetParam.theRecTopol->isItEdgePixelInX(maxPixelRow));
     bool edgey = (theDetParam.theRecTopol->isItEdgePixelInY(minPixelCol) ||
                   theDetParam.theRecTopol->isItEdgePixelInY(maxPixelCol));
-
+   if(isnan(theClusterParam.NNSigmaX_) or theClusterParam.NNSigmaX_>=650 or isnan(theClusterParam.NNSigmaY_) or theClusterParam.NNSigmaY_>=1575){
+        printf("====================== NN RECO HAS FAILED: ERROR LARGER THAN BUFFER ======================");
+        printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
+        theClusterParam.ierr = 12345;
+        //for(int i = 0 ; i < TXSIZE ; i++){
+        //        for(int j = 0 ; j < TYSIZE ; j++)
+        //                printf("%.2f ",clustMatrix[i][j]);
+        //        printf("\n");
+        //}
+        // printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
+        //for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
+         }
     if (theClusterParam.ierr != 0) {
       // If reconstruction fails the hit position is calculated from cluster center of gravity
       // corrected in x by average Lorentz drift. Assign huge errors.
@@ -703,11 +731,11 @@ void PixelCPENNReco::fillPSetDescription(edm::ParameterSetDescription& desc) {
   //desc.add<int>("speed", -2);
   //desc.add<bool>("UseClusterSplitter", false);
   //some defaults for testing
-  desc.add<std::string>("graphPath_x","/uscms_data/d3/ssekhar/CMSSW_12_6_2/src/graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
+  desc.add<std::string>("graphPath_x","/uscms_data/d3/ssekhar/CMSSW_12_6_2/src/graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_121422.pb");
   desc.add<std::string>("inputTensorName_x","input_1");
   desc.add<std::string>("anglesTensorName_x","input_2");
   desc.add<std::string>("outputTensorName_x","Identity");
-  desc.add<std::string>("graphPath_y","/uscms_data/d3/ssekhar/CMSSW_12_6_2/src/graph_y_1dcnn_p1_2024_by25k_irrad_BPIXL1_022122.pb");
+  desc.add<std::string>("graphPath_y","/uscms_data/d3/ssekhar/CMSSW_12_6_2/src/graph_y_1dcnn_p1_2024_by25k_irrad_BPIXL1_121422.pb");
   desc.add<std::string>("inputTensorName_y","input_1");
   desc.add<std::string>("anglesTensorName_y","input_2");
   desc.add<std::string>("outputTensorName_y","Identity");
