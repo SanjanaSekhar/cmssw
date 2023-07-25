@@ -69,7 +69,11 @@ TrackingRecHit::ConstRecHitPointer TkClonerImpl::makeShared(SiPixelRecHit const&
   printf("=============== IN TkClonerImpl.cc ====================\n");
   //printf("std::get<0>(params) = %f, std::get<1>(params) = %f, std::get<2>(params) = %f\n", std::get<0>(params), std::get<1>(params), std::get<2>(params));
   return std::make_shared<SiPixelRecHit>(
-      std::get<0>(params), std::get<1>(params), std::get<2>(params), *hit.det(), hit.cluster());
+      std::get<0>(params), 
+      std::get<1>(params), 
+      std::get<2>(params), 
+      *hit.det(), 
+      hit.cluster());
 }
 
 TrackingRecHit::ConstRecHitPointer TkClonerImpl::makeShared(SiStripRecHit2D const& hit,

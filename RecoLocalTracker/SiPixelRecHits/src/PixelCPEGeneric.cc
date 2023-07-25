@@ -334,9 +334,10 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
 
   }  // if ( IrradiationBiasCorrection_ )
 
-  //cout<<" in PixelCPEGeneric:localPosition - pos = "<<xPos<<" "<<yPos<<endl; //dk
+  cout<<" in PixelCPEGeneric:localPosition - pos = "<<xPos<<" "<<yPos<<endl; //dk
 
   //--- Now put the two together
+  //std::cout << xPos << " " << yPos << std::endl;
   LocalPoint pos_in_local(xPos, yPos);
   return pos_in_local;
 }
