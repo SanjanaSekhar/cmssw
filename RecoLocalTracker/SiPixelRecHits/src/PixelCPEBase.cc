@@ -259,7 +259,7 @@ void PixelCPEBase::computeAnglesFromTrajectory(DetParam const& theDetParam,
                                                const LocalTrajectoryParameters& ltp) const {
   theClusterParam.cotalpha = ltp.dxdz();
   theClusterParam.cotbeta = ltp.dydz();
-
+  cout << "alpha = " <<  theClusterParam.cotalpha << " beta = " << theClusterParam.cotbeta << endl;
   LocalPoint trk_lp = ltp.position();
   theClusterParam.trk_lp_x = trk_lp.x();
   theClusterParam.trk_lp_y = trk_lp.y();

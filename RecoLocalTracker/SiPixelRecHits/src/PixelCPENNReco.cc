@@ -153,7 +153,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
       ID = forwardTemplateID_;  // forward
   }
   //cout << "PixelCPENNReco : ID = " << ID << endl;
-*/
+*/if(!fpix) printf("BPIX \n");
   if(fpix){
    edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
                                           << "Network not trained on FPIX";
@@ -183,7 +183,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   // Will add these values to the output of  PixelTempReco1D
   float tmp_x = float(row_offset) + 0.5f;
   float tmp_y = float(col_offset) + 0.5f;
-
+   printf("tmp_x = %.2f, tmp_y = %0.2f\n",tmp_x,tmp_y);
   // Store these offsets (to be added later) in a LocalPoint after tranforming
   // them from measurement units (pixel units) to local coordinates (cm)
   //
@@ -193,7 +193,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   // to be applied
   float lorentzshiftX = 0.5f * theDetParam.lorentzShiftInCmX;
   float lorentzshiftY = 0.5f * theDetParam.lorentzShiftInCmY;
-
+   printf("lorentzshiftX = %.2f, lorentzshiftY = %0.2f\n",lorentzshiftX,lorentzshiftY);
   // ggiurgiu@jhu.edu 12/09/2010 : update call with trk angles needed for bow/kink corrections
   LocalPoint lp;
 
@@ -338,10 +338,16 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 
   //deal with double width pixels
   printf("n_double_x = %i, n_double_y = %i\n",n_double_x,n_double_y);
-  if(n_double_x==1 && clustersize_x>12) {printf("clustersize_x > 12, SKIPPING\n"); } // NEED TO FIX CLUSTERSIZE COMPUTATION
-    if(n_double_x==2 && clustersize_x>11) {printf("clustersize_x > 11, SKIPPING\n"); }
-    if(n_double_y==1 && clustersize_y>20) {printf("clustersize_y = %i > 20, SKIPPING\n", clustersize_y);}
-    if(n_double_y==2 && clustersize_x>19) {printf("clustersize_y = %i > 19, SKIPPING\n", clustersize_y);}
+  if(clustersize_x > 10 or clustersize_y > 15) {
+ edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
+                                           << " CLUSTER IS ABSURDLY LARGE ! Clustersize in x = " << clustersize_x << " Clustersize in y = " << clustersize_y;
+   theClusterParam.ierr = 12345;
+}
+
+   // if(n_double_x==1 && clustersize_x>12) {printf("clustersize_x > 12, SKIPPING\n"); } // NEED TO FIX CLUSTERSIZE COMPUTATION
+   // if(n_double_x==2 && clustersize_x>11) {printf("clustersize_x > 11, SKIPPING\n"); }
+   // if(n_double_y==1 && clustersize_y>20) {printf("clustersize_y = %i > 20, SKIPPING\n", clustersize_y);}
+   // if(n_double_y==2 && clustersize_x>19) {printf("clustersize_y = %i > 19, SKIPPING\n", clustersize_y);}
 
 //first deal with double width pixels in x
     int k=0,m=0;
@@ -446,7 +452,9 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   // ******************************************************************/
 
   //========================================================================================
-        // define a tensor and fill it with cluster projection
+   printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s and %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_x.c_str(),outputTensorName_y.c_str(),anglesTensorName_x.c_str());    
+   if(theClusterParam.ierr != 12345){ 
+       // define a tensor and fill it with cluster projection
         tensorflow::Tensor cluster_flat_x(tensorflow::DT_FLOAT, {1,TXSIZE,1});
         tensorflow::Tensor cluster_flat_y(tensorflow::DT_FLOAT, {1,TYSIZE,1});
       //tensorflow::Tensor cluster_(tensorflow::DT_FLOAT, {1,TXSIZE,TYSIZE,1});
@@ -467,7 +475,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	 		printf("%.2f ",clustMatrix[i][j]);
 	 	printf("\n");
 	 }
-	// printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
+	 printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
 	 for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
 */  
        //gettimeofday(&now0, &timz);
@@ -507,21 +515,24 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
         for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
      }
         else theClusterParam.ierr = 0.;
-
+} 
+  printf("theClusterParam.ierr = %i\n",theClusterParam.ierr);
   // Check exit status
-  if UNLIKELY (theClusterParam.ierr != 0) {
+  if(theClusterParam.ierr != 0) {
     LogDebug("PixelCPENNReco::localPosition")
         << "reconstruction failed with error " << theClusterParam.ierr << "\n";
-
+    printf("NN reco has failed, compute position estimates based on cluster center of gravity + Lorentz drift\n");
     // Template reco has failed, compute position estimates based on cluster center of gravity + Lorentz drift
     // Future improvement would be to call generic reco instead
 
     // ggiurgiu@jhu.edu, 21/09/2010 : trk angles needed to correct for bows/kinks
     if (theClusterParam.with_track_angle) {
+     printf("theClusterParam.theCluster->x() = %f, lorentzshiftX = %f\n", theClusterParam.theCluster->x(),  lorentzshiftX);
+     printf("theClusterParam.theCluster->y() = %f, lorentzshiftY = %f\n", theClusterParam.theCluster->y(),  lorentzshiftY);
       theClusterParam.NNXrec_ =
           theDetParam.theTopol->localX(theClusterParam.theCluster->x(), theClusterParam.loc_trk_pred) + lorentzshiftX;
       theClusterParam.NNYrec_ =
-          theDetParam.theTopol->localY(theClusterParam.theCluster->y(), theClusterParam.loc_trk_pred) + lorentzshiftY;
+          theDetParam.theTopol->localY(theClusterParam.theCluster->y(), theClusterParam.loc_trk_pred ) + lorentzshiftY;
     } else {
       edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
                                             << "Should never be here. PixelCPENNReco should always be called "
@@ -539,8 +550,9 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
     //theClusterParam.NNSigmaX_ *= micronsToCm;
     //theClusterParam.NNSigmaY_ *= micronsToCm;
     // go back to the module coordinate system
-    //theClusterParam.NNXrec_ += lp.x();
-    //theClusterParam.NNYrec_ += lp.y();
+   printf("lp.x() = %.2f, lp.y() = %.2f\n", lp.x(), lp.y());
+    theClusterParam.NNXrec_ += lp.x();
+    theClusterParam.NNYrec_ += lp.y();
     //theClusterParam.NNSigmaX_ += lp.x();
     //theClusterParam.NNSigmaY_ += lp.y();
     // Compute the Alignment Group Corrections [template ID should already be selected from call to reco procedure]
@@ -586,7 +598,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 
   if (theClusterParam.ierr == 0)  // always true here
     theClusterParam.hasFilledProb_ = true;
-  printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
+  printf("x = %f,  y = %f\n",theClusterParam.NNXrec_, theClusterParam.NNYrec_);
   return LocalPoint(theClusterParam.NNXrec_, theClusterParam.NNYrec_);
 }
 
@@ -616,9 +628,9 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
     xerr = theClusterParam.theCluster->getSplitClusterErrorX() * micronsToCm;
     yerr = theClusterParam.theCluster->getSplitClusterErrorY() * micronsToCm;
 
-    //cout << "Errors set at cluster splitting level : " << endl;
-    //cout << "xerr = " << xerr << endl;
-    //cout << "yerr = " << yerr << endl;
+    cout << "Errors set at cluster splitting level : " << endl;
+    cout << "xerr = " << xerr << endl;
+    cout << "yerr = " << yerr << endl;
   } else {
     // If errors are not split at the cluster splitting level, set the errors here
 
@@ -646,6 +658,11 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
         // printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
         //for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
          }
+    if(theClusterParam.theCluster->sizeX() > 10 or theClusterParam.theCluster->sizeY() > 15){
+edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition "
+                                           << "CLUSTER IS ABSURDLY LARGE ! Clustersize in x = " << theClusterParam.theCluster->sizeX() << " Clustersize in y = " << theClusterParam.theCluster->sizeY();
+    theClusterParam.ierr = 12345;
+    }
     if (theClusterParam.ierr != 0) {
       // If reconstruction fails the hit position is calculated from cluster center of gravity
       // corrected in x by average Lorentz drift. Assign huge errors.
@@ -720,7 +737,7 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
   //cout << "yerr = " << yerr << endl;
   //cout << "Out of PixelCPENNREco..........................................................................." << endl;
   //cout << endl;
-
+  printf("xerr = %f,  yerr = %f\n", xerr, yerr);
   return LocalError(xerr * xerr, 0, yerr * yerr);
 }
 
@@ -731,11 +748,11 @@ void PixelCPENNReco::fillPSetDescription(edm::ParameterSetDescription& desc) {
   //desc.add<int>("speed", -2);
   //desc.add<bool>("UseClusterSplitter", false);
   //some defaults for testing
-  desc.add<std::string>("graphPath_x","/uscms_data/d3/ssekhar/CMSSW_12_6_2/src/graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_121422.pb");
+  desc.add<std::string>("graphPath_x","/uscms_data/d3/ssekhar/CMSSW_12_6_3/src/graph_x_1dcnn_p1_2024_by25k_irrad_BPIXL1_121422.pb");
   desc.add<std::string>("inputTensorName_x","input_1");
   desc.add<std::string>("anglesTensorName_x","input_2");
   desc.add<std::string>("outputTensorName_x","Identity");
-  desc.add<std::string>("graphPath_y","/uscms_data/d3/ssekhar/CMSSW_12_6_2/src/graph_y_1dcnn_p1_2024_by25k_irrad_BPIXL1_121422.pb");
+  desc.add<std::string>("graphPath_y","/uscms_data/d3/ssekhar/CMSSW_12_6_3/src/graph_y_1dcnn_p1_2024_by25k_irrad_BPIXL1_121422.pb");
   desc.add<std::string>("inputTensorName_y","input_1");
   desc.add<std::string>("anglesTensorName_y","input_2");
   desc.add<std::string>("outputTensorName_y","Identity");
