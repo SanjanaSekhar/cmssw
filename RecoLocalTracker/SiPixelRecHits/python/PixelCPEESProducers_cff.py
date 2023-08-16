@@ -13,6 +13,7 @@ from RecoLocalTracker.SiPixelRecHits.PixelCPEGeneric_cfi import *
 from RecoLocalTracker.SiPixelRecHits.pixelCPEFastESProducerPhase1_cfi import *
 from RecoLocalTracker.SiPixelRecHits.pixelCPEFastESProducerPhase2_cfi import *
 from RecoLocalTracker.SiPixelRecHits.pixelCPEFastESProducerHIonPhase1_cfi import *
+#from RecoLocalTracker.SiPixelRecHits.PixelCPEFastESProducer_cfi import *
 # 3. NN CPE
 #
 from RecoLocalTracker.SiPixelRecHits.PixelCPENNReco_cfi import *
