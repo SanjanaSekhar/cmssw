@@ -153,15 +153,17 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
       ID = forwardTemplateID_;  // forward
   }
   //cout << "PixelCPENNReco : ID = " << ID << endl;
-*/if(!fpix) printf("BPIX \n");
+*/if(!fpix) printf("BPIX LAYER %i\n",ttopo_.pxbLayer(theDetParam.theDet->geographicalId()));
   if(fpix){
    edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
-                                          << "Network not trained on FPIX";
+                                          << "Network not trained on FPIX D" << ttopo_.pxfDisk(theDetParam.theDet->geographicalId());
+   theClusterParam.ierr = 12345;
   }
   // how to access layer info from det_id? can i use the tracker topology token here? so i have to add it to the det_id or 
   if(ttopo_.pxbLayer(theDetParam.theDet->geographicalId()) != 1){
      edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
-                                          << "Network not trained on " << ttopo_.pxbLayer(theDetParam.theDet->geographicalId());
+                                          << "Network not trained on BPIX L" << ttopo_.pxbLayer(theDetParam.theDet->geographicalId());
+  theClusterParam.ierr = 12345;
   }
 
  // SiPixelTemplate templ(thePixelTemp_);
@@ -183,7 +185,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   // Will add these values to the output of  PixelTempReco1D
   float tmp_x = float(row_offset) + 0.5f;
   float tmp_y = float(col_offset) + 0.5f;
-   printf("tmp_x = %.2f, tmp_y = %0.2f\n",tmp_x,tmp_y);
+  //printf("tmp_x = %.2f, tmp_y = %0.2f\n",tmp_x,tmp_y);
   // Store these offsets (to be added later) in a LocalPoint after tranforming
   // them from measurement units (pixel units) to local coordinates (cm)
   //
@@ -452,7 +454,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   // ******************************************************************/
 
   //========================================================================================
-   printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s and %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_x.c_str(),outputTensorName_y.c_str(),anglesTensorName_x.c_str());    
+ //  printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s and %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_x.c_str(),outputTensorName_y.c_str(),anglesTensorName_x.c_str());    
    if(theClusterParam.ierr != 12345){ 
        // define a tensor and fill it with cluster projection
         tensorflow::Tensor cluster_flat_x(tensorflow::DT_FLOAT, {1,TXSIZE,1});
@@ -514,7 +516,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
         // printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
         for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
      }
-        else theClusterParam.ierr = 0.;
+      else theClusterParam.ierr = 0.;
 } 
   printf("theClusterParam.ierr = %i\n",theClusterParam.ierr);
   // Check exit status
@@ -550,7 +552,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
     //theClusterParam.NNSigmaX_ *= micronsToCm;
     //theClusterParam.NNSigmaY_ *= micronsToCm;
     // go back to the module coordinate system
-   printf("lp.x() = %.2f, lp.y() = %.2f\n", lp.x(), lp.y());
+   //printf("lp.x() = %.2f, lp.y() = %.2f\n", lp.x(), lp.y());
     theClusterParam.NNXrec_ += lp.x();
     theClusterParam.NNYrec_ += lp.y();
     //theClusterParam.NNSigmaX_ += lp.x();

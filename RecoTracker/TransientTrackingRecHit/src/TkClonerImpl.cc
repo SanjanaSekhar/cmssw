@@ -66,7 +66,7 @@ TrackingRecHit::ConstRecHitPointer TkClonerImpl::makeShared(SiPixelRecHit const&
   // std::cout << "cloning " << typeid(hit).name() << std::endl;
   const SiPixelCluster& clust = *hit.cluster();
   auto&& params = pixelCPE->getParameters(clust, *hit.detUnit(), tsos);
-  printf("=============== IN TkClonerImpl.cc ====================\n");
+  //printf("=============== IN TkClonerImpl.cc ====================\n");
   //printf("std::get<0>(params) = %f, std::get<1>(params) = %f, std::get<2>(params) = %f\n", std::get<0>(params), std::get<1>(params), std::get<2>(params));
   return std::make_shared<SiPixelRecHit>(
       std::get<0>(params), 

@@ -397,7 +397,8 @@ LocalPoint PixelCPETemplateReco::localPosition(DetParam const& theDetParam, Clus
 
   if (theClusterParam.ierr == 0)  // always true here
     theClusterParam.hasFilledProb_ = true;
-
+  cout << "PixelCPETemplateReco: x = " << theClusterParam.templXrec_ << " y = " << theClusterParam.templYrec_ << endl;
+  cout << "PixelCPETemplateReco: cotalpha = " << theClusterParam.cotalpha << " cotbeta = " << theClusterParam.cotbeta << endl;
   return LocalPoint(theClusterParam.templXrec_, theClusterParam.templYrec_);
 }
 
