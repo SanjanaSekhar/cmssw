@@ -107,8 +107,8 @@ PixelCPEBase::PixelCPEBase(edm::ParameterSet const& conf,
   // For Templates only
   // Compute the Lorentz shifts for this detector element for templates (from Alignment)
   doLorentzFromAlignment_ = conf.getParameter<bool>("doLorentzFromAlignment");
-  useLAFromDB_ = conf.getParameter<bool>("useLAFromDB");
-
+  //useLAFromDB_ = conf.getParameter<bool>("useLAFromDB");
+  useLAFromDB_ = true;
   LogDebug("PixelCPEBase") << " LA constants - " << lAOffset_ << " " << lAWidthBPix_ << " " << lAWidthFPix_
                            << endl;  //dk
 
@@ -195,10 +195,12 @@ void PixelCPEBase::fillDetParams() {
     p.bx = Bfield.x();
 
     //---  Compute the Lorentz shifts for this detector element
-    if ((theFlag_ == 0) || useLAFromDB_ ||
+   cout << "useLAFromDB_ = " << useLAFromDB_; 
+   if (useLAFromDB_ ||
         doLorentzFromAlignment_) {  // do always for generic and if using LA from DB or alignment for templates
       p.driftDirection = driftDirection(p, Bfield);
-      computeLorentzShifts(p);
+      computeLorentzShifts(p); 
+      cout << "Computing Lorentz shifts..." << endl;
     }
 
     LogDebug("PixelCPEBase::fillDetParams()") << "***** PIXEL LAYOUT *****"
@@ -259,7 +261,7 @@ void PixelCPEBase::computeAnglesFromTrajectory(DetParam const& theDetParam,
                                                const LocalTrajectoryParameters& ltp) const {
   theClusterParam.cotalpha = ltp.dxdz();
   theClusterParam.cotbeta = ltp.dydz();
-  cout << "alpha = " <<  theClusterParam.cotalpha << " beta = " << theClusterParam.cotbeta << endl;
+  //cout << "alpha = " <<  theClusterParam.cotalpha << " beta = " << theClusterParam.cotbeta << endl;
   LocalPoint trk_lp = ltp.position();
   theClusterParam.trk_lp_x = trk_lp.x();
   theClusterParam.trk_lp_y = trk_lp.y();
