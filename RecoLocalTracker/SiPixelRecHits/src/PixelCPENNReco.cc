@@ -48,7 +48,7 @@ PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
                                            const MagneticField* mag,
                                            const TrackerGeometry& geom,
                                            const TrackerTopology& ttopo,
-                                           //const SiPixelLorentzAngle* lorentzAngle,
+                                           const SiPixelLorentzAngle* lorentzAngle,
                                            //const SiPixelTemplateDBObject* templateDBobject,
                                            const tensorflow::Session* session_x_,
                                            const tensorflow::Session* session_y_
@@ -153,16 +153,19 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
       ID = forwardTemplateID_;  // forward
   }
   //cout << "PixelCPENNReco : ID = " << ID << endl;
-*/if(!fpix) printf("BPIX LAYER %i\n",ttopo_.pxbLayer(theDetParam.theDet->geographicalId()));
-  if(fpix){
+*/
+  //if(!fpix) printf("BPIX LAYER %i\n",ttopo_.pxbLayer(theDetParam.theDet->geographicalId().rawId()));
+  //if(!fpix) printf("BPIX LAYER %i\n",ttopo_.pxbLayer(theDetParam.theDet->detId()));
+	if(fpix){
    edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
-                                          << "Network not trained on FPIX D" << ttopo_.pxfDisk(theDetParam.theDet->geographicalId());
+                                          << "Network not trained on FPIX D" << ttopo_.pxfDisk(theDetParam.theDet->geographicalId().rawId())
+					  << " (BPIX L" << ttopo_.pxbLayer(theDetParam.theDet->geographicalId().rawId()) << ")";
    theClusterParam.ierr = 12345;
   }
   // how to access layer info from det_id? can i use the tracker topology token here? so i have to add it to the det_id or 
-  if(ttopo_.pxbLayer(theDetParam.theDet->geographicalId()) != 1){
+  if(!fpix and ttopo_.pxbLayer(theDetParam.theDet->geographicalId().rawId()) != 1){
      edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
-                                          << "Network not trained on BPIX L" << ttopo_.pxbLayer(theDetParam.theDet->geographicalId());
+                                          << "Network not trained on BPIX L" << ttopo_.pxbLayer(theDetParam.theDet->geographicalId().rawId());
   theClusterParam.ierr = 12345;
   }
 
@@ -282,7 +285,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
     int offset_y = 10 - mid_y;
       
 
-	printf("Cluster size in x: %i and y: %i\n",theClusterParam.theCluster->sizeX(),theClusterParam.theCluster->sizeY());
+	//printf("Cluster size in x: %i and y: %i\n",theClusterParam.theCluster->sizeX(),theClusterParam.theCluster->sizeY());
   // Copy clust's pixels (calibrated in electrons) into clusMatrix;
   for (int i = 0; i < theClusterParam.theCluster->size(); ++i) {
     auto pix = theClusterParam.theCluster->pixel(i);
@@ -339,8 +342,8 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
  // SiPixelTemplateReco::ClusMatrix clusterPayload{&clustMatrix[0][0], xdouble, ydouble, mrow, mcol};
 
   //deal with double width pixels
-  printf("n_double_x = %i, n_double_y = %i\n",n_double_x,n_double_y);
-  if(clustersize_x > 10 or clustersize_y > 15) {
+  //printf("n_double_x = %i, n_double_y = %i\n",n_double_x,n_double_y);
+  if(clustersize_x > 11 or clustersize_y > 19) {
  edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
                                            << " CLUSTER IS ABSURDLY LARGE ! Clustersize in x = " << clustersize_x << " Clustersize in y = " << clustersize_y;
    theClusterParam.ierr = 12345;
@@ -484,12 +487,12 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
         // define the output and run
       std::vector<tensorflow::Tensor> output_x, output_y;
   //gettimeofday(&now0, &timz);
-	 printf("INSIDE CNN1D X BLOCK\n");
+	 //printf("INSIDE CNN1D X BLOCK\n");
        tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_x}, &output_x);
        // gettimeofday(&now1, &timz);
   
         // gettimeofday(&now0, &timz);
-        printf("INSIDE CNN1D Y BLOCK\n");
+        //printf("INSIDE CNN1D Y BLOCK\n");
 	tensorflow::run(const_cast<tensorflow::Session *>(session_y), {{inputTensorName_y,cluster_flat_y}, {anglesTensorName_y,angles}}, {outputTensorName_y}, &output_y);
        // gettimeofday(&now1, &timz);
       
@@ -507,7 +510,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
       if(isnan(theClusterParam.NNXrec_) or theClusterParam.NNXrec_>=1300 or isnan(theClusterParam.NNYrec_) or theClusterParam.NNYrec_>=3150 or isnan(theClusterParam.NNSigmaX_) or theClusterParam.NNSigmaX_>=1300 or isnan(theClusterParam.NNSigmaY_) or theClusterParam.NNSigmaY_>=3150){
 	printf("====================== NN RECO HAS FAILED: POSITION LARGER THAN BUFFER ======================"); 
 	printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
-	theClusterParam.ierr = 12345;
+	//theClusterParam.ierr = 12345;
 	for(int i = 0 ; i < TXSIZE ; i++){
                 for(int j = 0 ; j < TYSIZE ; j++)
                         printf("%.2f ",clustMatrix[i][j]);
@@ -518,7 +521,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
      }
       else theClusterParam.ierr = 0.;
 } 
-  printf("theClusterParam.ierr = %i\n",theClusterParam.ierr);
+  //printf("theClusterParam.ierr = %i\n",theClusterParam.ierr);
   // Check exit status
   if(theClusterParam.ierr != 0) {
     LogDebug("PixelCPENNReco::localPosition")
@@ -529,8 +532,8 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 
     // ggiurgiu@jhu.edu, 21/09/2010 : trk angles needed to correct for bows/kinks
     if (theClusterParam.with_track_angle) {
-     printf("theClusterParam.theCluster->x() = %f, lorentzshiftX = %f\n", theClusterParam.theCluster->x(),  lorentzshiftX);
-     printf("theClusterParam.theCluster->y() = %f, lorentzshiftY = %f\n", theClusterParam.theCluster->y(),  lorentzshiftY);
+     //printf("theClusterParam.theCluster->x() = %f, lorentzshiftX = %f\n", theClusterParam.theCluster->x(),  lorentzshiftX);
+     //printf("theClusterParam.theCluster->y() = %f, lorentzshiftY = %f\n", theClusterParam.theCluster->y(),  lorentzshiftY);
       theClusterParam.NNXrec_ =
           theDetParam.theTopol->localX(theClusterParam.theCluster->x(), theClusterParam.loc_trk_pred) + lorentzshiftX;
       theClusterParam.NNYrec_ =
@@ -600,7 +603,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 
   if (theClusterParam.ierr == 0)  // always true here
     theClusterParam.hasFilledProb_ = true;
-  printf("x = %f,  y = %f\n",theClusterParam.NNXrec_, theClusterParam.NNYrec_);
+  //printf("x = %f,  y = %f\n",theClusterParam.NNXrec_, theClusterParam.NNYrec_);
   return LocalPoint(theClusterParam.NNXrec_, theClusterParam.NNYrec_);
 }
 
@@ -651,7 +654,7 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
    if(isnan(theClusterParam.NNSigmaX_) or theClusterParam.NNSigmaX_>=650 or isnan(theClusterParam.NNSigmaY_) or theClusterParam.NNSigmaY_>=1575){
         printf("====================== NN RECO HAS FAILED: ERROR LARGER THAN BUFFER ======================");
         printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
-        theClusterParam.ierr = 12345;
+        //theClusterParam.ierr = 12345;
         //for(int i = 0 ; i < TXSIZE ; i++){
         //        for(int j = 0 ; j < TYSIZE ; j++)
         //                printf("%.2f ",clustMatrix[i][j]);
@@ -660,7 +663,7 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
         // printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
         //for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
          }
-    if(theClusterParam.theCluster->sizeX() > 10 or theClusterParam.theCluster->sizeY() > 15){
+    if(theClusterParam.theCluster->sizeX() > 11 or theClusterParam.theCluster->sizeY() > 19){
 edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition "
                                            << "CLUSTER IS ABSURDLY LARGE ! Clustersize in x = " << theClusterParam.theCluster->sizeX() << " Clustersize in y = " << theClusterParam.theCluster->sizeY();
     theClusterParam.ierr = 12345;

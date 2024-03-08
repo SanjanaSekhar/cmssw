@@ -61,7 +61,7 @@ public:
                        const MagneticField *,
                        const TrackerGeometry &,
                        const TrackerTopology &,
-                     //  const SiPixelLorentzAngle *,
+                       const SiPixelLorentzAngle *,
                      //  const SiPixelTemplateDBObject *,
                        const tensorflow::Session *,
                        const tensorflow::Session *
