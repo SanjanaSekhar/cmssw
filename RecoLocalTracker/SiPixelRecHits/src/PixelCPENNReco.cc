@@ -166,7 +166,6 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
   if(!fpix and ttopo_.pxbLayer(theDetParam.theDet->geographicalId().rawId()) != 1){
      edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
                                           << "Network not trained on BPIX L" << ttopo_.pxbLayer(theDetParam.theDet->geographicalId().rawId());
-  theClusterParam.ierr = 12345;
   }
 
  // SiPixelTemplate templ(thePixelTemp_);
@@ -487,12 +486,12 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
         // define the output and run
       std::vector<tensorflow::Tensor> output_x, output_y;
   //gettimeofday(&now0, &timz);
-	 //printf("INSIDE CNN1D X BLOCK\n");
+	 printf("INSIDE CNN1D X BLOCK\n");
        tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_x}, &output_x);
        // gettimeofday(&now1, &timz);
   
         // gettimeofday(&now0, &timz);
-        //printf("INSIDE CNN1D Y BLOCK\n");
+        printf("INSIDE CNN1D Y BLOCK\n");
 	tensorflow::run(const_cast<tensorflow::Session *>(session_y), {{inputTensorName_y,cluster_flat_y}, {anglesTensorName_y,angles}}, {outputTensorName_y}, &output_y);
        // gettimeofday(&now1, &timz);
       
@@ -510,7 +509,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
       if(isnan(theClusterParam.NNXrec_) or theClusterParam.NNXrec_>=1300 or isnan(theClusterParam.NNYrec_) or theClusterParam.NNYrec_>=3150 or isnan(theClusterParam.NNSigmaX_) or theClusterParam.NNSigmaX_>=1300 or isnan(theClusterParam.NNSigmaY_) or theClusterParam.NNSigmaY_>=3150){
 	printf("====================== NN RECO HAS FAILED: POSITION LARGER THAN BUFFER ======================"); 
 	printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
-	//theClusterParam.ierr = 12345;
+	theClusterParam.ierr = 12345;
 	for(int i = 0 ; i < TXSIZE ; i++){
                 for(int j = 0 ; j < TYSIZE ; j++)
                         printf("%.2f ",clustMatrix[i][j]);
