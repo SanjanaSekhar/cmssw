@@ -52,8 +52,11 @@ public:
     //float templProbQ_;
 
     //int templQbin_;
-
+    
     int ierr;
+    
+    //const std::vector<tensorflow::Session *> session_x_vec;
+    //const std::vector<tensorflow::Session *> session_y_vec;
   };
 
   // PixelCPETemplateReco( const DetUnit& det );
@@ -63,9 +66,9 @@ public:
                        const TrackerTopology &,
                        const SiPixelLorentzAngle *,
                      //  const SiPixelTemplateDBObject *,
-                       const tensorflow::Session *,
-                       const tensorflow::Session *
-                       );
+                       const std::vector<tensorflow::Session> *,
+                       const std::vector<tensorflow::Session> *
+                       ) ;
 
   ~PixelCPENNReco() override;
 
@@ -101,12 +104,12 @@ private:
   std::string outputTensorName_x, outputTensorName_y;
   //std::string     fRootFileName;
 
-  const tensorflow::Session* session_x; 
-  const tensorflow::Session* session_y; 
-  //int MAXCLUSTER = 80000;
+  const std::vector<tensorflow::Session> * session_x_vec; 
+  const std::vector<tensorflow::Session> * session_y_vec; 
+  
   //float micronsToCm = 1e-4;
   std::string cpe; 
-  //int mid_x = 0, mid_y = 0;
+  //int layer, ladder, module;
   //float clsize_1[MAXCLUSTER][2], clsize_2[MAXCLUSTER][2], clsize_3[MAXCLUSTER][2], clsize_4[MAXCLUSTER][2], clsize_5[MAXCLUSTER][2], clsize_6[MAXCLUSTER][2];
   //struct timeval now0, now1;
   //struct timezone timz;
