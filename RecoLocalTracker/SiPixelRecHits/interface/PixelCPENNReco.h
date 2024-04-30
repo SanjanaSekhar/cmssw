@@ -66,8 +66,8 @@ public:
                        const TrackerTopology &,
                        const SiPixelLorentzAngle *,
                      //  const SiPixelTemplateDBObject *,
-                       const std::vector<tensorflow::Session> *,
-                       const std::vector<tensorflow::Session> *
+                       std::vector<const tensorflow::Session *> ,
+                       std::vector<const tensorflow::Session *> 
                        ) ;
 
   ~PixelCPENNReco() override;
@@ -104,8 +104,8 @@ private:
   std::string outputTensorName_x, outputTensorName_y;
   //std::string     fRootFileName;
 
-  const std::vector<tensorflow::Session> * session_x_vec; 
-  const std::vector<tensorflow::Session> * session_y_vec; 
+  std::vector<const tensorflow::Session *> session_x_vec; 
+  std::vector<const tensorflow::Session *> session_y_vec; 
   
   //float micronsToCm = 1e-4;
   std::string cpe; 

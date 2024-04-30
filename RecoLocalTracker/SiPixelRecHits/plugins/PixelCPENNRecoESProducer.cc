@@ -47,8 +47,8 @@ private:
   std::vector<std::string> tfDnnLabel_x, tfDnnLabel_y;
   std::vector<edm::ESGetToken<TfGraphDefWrapper, TfGraphRecord>> tfDnnToken_x, tfDnnToken_y;
   
-  const std::vector<tensorflow::Session> *sessions_x; 
-  const std::vector<tensorflow::Session> *sessions_y;
+  std::vector<const tensorflow::Session *> sessions_x; 
+  std::vector<const tensorflow::Session *> sessions_y;
 
 
   edm::ParameterSet pset_;
@@ -82,10 +82,14 @@ PixelCPENNRecoESProducer::PixelCPENNRecoESProducer(const edm::ParameterSet& p) {
   pDDToken_ = c.consumes();
   hTTToken_ = c.consumes();
  // templateDBobjectToken_ = c.consumes();
-  for(i = 0; i < int(tfDnnLabel_x.size()); i++){
-    tfDnnToken_x.push_back(c.consumes(edm::ESInputTag("", tfDnnLabel_x[i])));
-    tfDnnToken_y.push_back(c.consumes(edm::ESInputTag("", tfDnnLabel_y[i])));
-  }
+  //for(i = 0; i < int(tfDnnLabel_x.size()); i++){
+  //  tfDnnToken_x.push_back(c.consumes<TfGraphDefWrapper, TfGraphRecord>(edm::ESInputTag("", tfDnnLabel_x[i])));
+  //  tfDnnToken_y.push_back(c.consumes<TfGraphDefWrapper, TfGraphRecord>(edm::ESInputTag("", tfDnnLabel_y[i])));
+  //}
+  for (auto token: tfDnnLabel_x) tfDnnToken_x.push_back(c.consumes(edm::ESInputTag("", token)))
+  for (auto token: tfDnnLabel_y) tfDnnToken_y.push_back(c.consumes(edm::ESInputTag("", token)))
+  //tfDnnToken_x = c.consumes<std::vector<TfGraphDefWrapper, TfGraphRecord>>(edm::ESInputTag("", tfDnnLabel_x))
+  //tfDnnToken_y = c.consumes<std::vector<TfGraphDefWrapper, TfGraphRecord>>(edm::ESInputTag("", tfDnnLabel_y))
   if (useLAFromDB_ || doLorentzFromAlignment_) {
    char const* laLabel = doLorentzFromAlignment_ ? "fromAlignment" : "";
     lorentzAngleToken_ = c.consumes(edm::ESInputTag("", laLabel));
@@ -106,10 +110,12 @@ std::unique_ptr<PixelClusterParameterEstimator> PixelCPENNRecoESProducer::produc
     lorentzAngleProduct = &iRecord.get(lorentzAngleToken_);
   }
   //const tensorflow::Session* session = nullptr;
-  for(i = 0; i < int(tfDnnLabel_x.size()); i++){
-    *sessions_x.push_back(iRecord.get(tfDnnToken_x[i]).getSession());
-    *sessions_y.push_back(iRecord.get(tfDnnToken_y[i]).getSession());
-  }
+  //for(i = 0; i < int(tfDnnLabel_x.size()); i++){
+  //  sessions_x.push_back(iRecord.get(tfDnnToken_x[i]).getSession());
+  //  sessions_y.push_back(iRecord.get(tfDnnToken_y[i]).getSession());
+  //}
+  for(auto token : tfDnnToken_x) sessions_x.push_back(iRecord.get(token).getSession());
+  for(auto token : tfDnnToken_y) sessions_y.push_back(iRecord.get(token).getSession());
   return std::make_unique<PixelCPENNReco>(pset_,
                                                 &iRecord.get(magfieldToken_),
                                                 iRecord.get(pDDToken_),

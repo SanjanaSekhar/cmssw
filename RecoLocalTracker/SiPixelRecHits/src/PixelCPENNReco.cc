@@ -49,8 +49,8 @@ PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
 	const TrackerGeometry& geom,
 	const TrackerTopology& ttopo,
 	const SiPixelLorentzAngle* lorentzAngle,
-	const std::vector<tensorflow::Session> *session_x_vec_,
-	const std::vector<tensorflow::Session> *session_y_vec_
+	std::vector<const tensorflow::Session*> session_x_vec_,
+	std::vector<const tensorflow::Session*> session_y_vec_
 	)
 : PixelCPEBase(conf, mag, geom, ttopo, nullptr, nullptr, nullptr, nullptr, 59){
 
@@ -109,7 +109,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	  }
   
   //outer ladders = unflipped = odd nos
-  	  
+  	  /*
 	  const tensorflow::Session* session_x; 
           const tensorflow::Session* session_y;
 	  if (layer == 1 and ladder%2 != 0) {session_x = session_x_vec.at(0); session_y = session_y_vec.at(0);}
@@ -119,7 +119,8 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	  else if (layer == 3 and module > 4) {session_x = session_x_vec.at(5); session_y = session_y_vec.at(5);}
 	  else if (layer == 4 and module <= 4) {session_x = session_x_vec.at(6); session_y = session_y_vec.at(6);}
 	  else if (layer == 4 and module > 4) {session_x = session_x_vec.at(7); session_y = session_y_vec.at(7);}
-  // Preparing to retrieve ADC counts from the SiPixeltheClusterParam.theCluster->  In the cluster,
+  	  */
+   // Preparing to retrieve ADC counts from the SiPixeltheClusterParam.theCluster->  In the cluster,
   // we have the following:
   //   int minPixelRow(); // Minimum pixel index in the x direction (low edge).
   //   int maxPixelRow(); // Maximum pixel index in the x direction (top edge).
@@ -373,8 +374,8 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 		   //gettimeofday(&now0, &timz);
 			// define the output and run
  		std::vector<tensorflow::Tensor> output_x, output_y;   	
-    		tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_x}, &output_x);
-    		tensorflow::run(const_cast<tensorflow::Session *>(session_y), {{inputTensorName_y,cluster_flat_y}, {anglesTensorName_y,angles}}, {outputTensorName_y}, &output_y);
+    		tensorflow::run(const_cast<tensorflow::Session *>(session_x_vec[0]), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_x}, &output_x);
+    		tensorflow::run(const_cast<tensorflow::Session *>(session_y_vec[0]), {{inputTensorName_y,cluster_flat_y}, {anglesTensorName_y,angles}}, {outputTensorName_y}, &output_y);
     	
 
     	theClusterParam.NNXrec_ = output_x[0].matrix<float>()(0,0);
