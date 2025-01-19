@@ -44,8 +44,8 @@ private:
   edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> hTTToken_;
   edm::ESGetToken<SiPixelLorentzAngle, SiPixelLorentzAngleRcd> lorentzAngleToken_;
   edm::ESGetToken<SiPixelTemplateDBObject, SiPixelTemplateDBObjectESProducerRcd> templateDBobjectToken_;
-  std::vector<std::string> tfDnnLabel_x, tfDnnLabel_y;
-  std::vector<edm::ESGetToken<TfGraphDefWrapper, TfGraphRecord>> tfDnnToken_x, tfDnnToken_y;
+  std::vector<std::string> tfDnnLabels_x, tfDnnLabels_y;
+  std::vector<edm::ESGetToken<TfGraphDefWrapper, TfGraphRecord>> tfDnnTokens_x, tfDnnTokens_y;
   
   std::vector<const tensorflow::Session *> sessions_x; 
   std::vector<const tensorflow::Session *> sessions_y;
@@ -63,8 +63,8 @@ using namespace edm;
 PixelCPENNRecoESProducer::PixelCPENNRecoESProducer(const edm::ParameterSet& p) {
 //  tfDnnToken_(esConsumes(edm::ESInputTag("", tfDnnLabel_))) {
   std::string myname = p.getParameter<std::string>("ComponentName");
-  tfDnnLabel_x = p.getParameter<std::vector<std::string>>("tfDnnLabel_x");
-  tfDnnLabel_y = p.getParameter<std::vector<std::string>>("tfDnnLabel_y");
+  tfDnnLabels_x = p.getParameter<std::vector<std::string>>("tfDnnLabels_x");
+  tfDnnLabels_y = p.getParameter<std::vector<std::string>>("tfDnnLabels_y");
   //printf("tfDnnLabel_x = %s\n",tfDnnLabel_x.c_str());
   //filename_ = p.getParameter<std::string>("FileName");
   //for(i = 0; i < int(tfDnnLabel_x.size()); i++){
@@ -86,8 +86,8 @@ PixelCPENNRecoESProducer::PixelCPENNRecoESProducer(const edm::ParameterSet& p) {
   //  tfDnnToken_x.push_back(c.consumes<TfGraphDefWrapper, TfGraphRecord>(edm::ESInputTag("", tfDnnLabel_x[i])));
   //  tfDnnToken_y.push_back(c.consumes<TfGraphDefWrapper, TfGraphRecord>(edm::ESInputTag("", tfDnnLabel_y[i])));
   //}
-  for (auto token: tfDnnLabel_x) tfDnnToken_x.push_back(c.consumes(edm::ESInputTag("", token)))
-  for (auto token: tfDnnLabel_y) tfDnnToken_y.push_back(c.consumes(edm::ESInputTag("", token)))
+  for (auto label: tfDnnLabels_x) tfDnnTokens_x.emplace_back(c.consumes(edm::ESInputTag("", label)));
+  for (auto label: tfDnnLabels_y) tfDnnTokens_y.emplace_back(c.consumes(edm::ESInputTag("", label)));
   //tfDnnToken_x = c.consumes<std::vector<TfGraphDefWrapper, TfGraphRecord>>(edm::ESInputTag("", tfDnnLabel_x))
   //tfDnnToken_y = c.consumes<std::vector<TfGraphDefWrapper, TfGraphRecord>>(edm::ESInputTag("", tfDnnLabel_y))
   if (useLAFromDB_ || doLorentzFromAlignment_) {
@@ -114,8 +114,8 @@ std::unique_ptr<PixelClusterParameterEstimator> PixelCPENNRecoESProducer::produc
   //  sessions_x.push_back(iRecord.get(tfDnnToken_x[i]).getSession());
   //  sessions_y.push_back(iRecord.get(tfDnnToken_y[i]).getSession());
   //}
-  for(auto token : tfDnnToken_x) sessions_x.push_back(iRecord.get(token).getSession());
-  for(auto token : tfDnnToken_y) sessions_y.push_back(iRecord.get(token).getSession());
+  for(auto token : tfDnnTokens_x) sessions_x.emplace_back(iRecord.get(token).getSession());
+  for(auto token : tfDnnTokens_y) sessions_y.emplace_back(iRecord.get(token).getSession());
   return std::make_unique<PixelCPENNReco>(pset_,
                                                 &iRecord.get(magfieldToken_),
                                                 iRecord.get(pDDToken_),
