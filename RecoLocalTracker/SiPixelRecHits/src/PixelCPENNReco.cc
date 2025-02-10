@@ -88,6 +88,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	
        
 	ClusterParamTemplate& theClusterParam = static_cast<ClusterParamTemplate&>(theClusterParamBase);
+	theClusterParam.ierr = 0;
 
 	if (!GeomDetEnumerators::isTrackerPixel(theDetParam.thePart))
 		throw cms::Exception("PixelCPENNReco::localPosition :") << "A non-pixel detector type in here?";
@@ -115,11 +116,12 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	  if (layer == 1 and ladder%2 != 0) {session_x = session_x_vec.at(0); session_y = session_y_vec.at(0);}
 	  else if (layer == 1 and ladder%2 == 0) {session_x = session_x_vec.at(1); session_y = session_y_vec.at(1);}
 	  else if (layer == 2) {session_x = session_x_vec.at(2); session_y = session_y_vec.at(2);}
-	  else if (layer == 3 and module <= 4) {session_x = session_x_vec.at(4); session_y = session_y_vec.at(4);}
+	  else { theClusterParam.ierr = 12345; // turn off NN CPE for L3 and L4 for now
+		if (layer == 3 and module <= 4) {session_x = session_x_vec.at(4); session_y = session_y_vec.at(4);}
 	  else if (layer == 3 and module > 4) {session_x = session_x_vec.at(5); session_y = session_y_vec.at(5);}
 	  else if (layer == 4 and module <= 4) {session_x = session_x_vec.at(6); session_y = session_y_vec.at(6);}
 	  else if (layer == 4 and module > 4) {session_x = session_x_vec.at(7); session_y = session_y_vec.at(7);}
-  	  
+  	  }
    // Preparing to retrieve ADC counts from the SiPixeltheClusterParam.theCluster->  In the cluster,
   // we have the following:
   //   int minPixelRow(); // Minimum pixel index in the x direction (low edge).
@@ -350,7 +352,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 
     float NNYrec1_ = nonsense;
     float NNXrec1_ = nonsense;
-
+	cout << " theClusterParam.ierr " << theClusterParam.ierr << endl;
 
   //========================================================================================
  //  printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s and %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_x.c_str(),outputTensorName_y.c_str(),anglesTensorName_x.c_str());    
@@ -372,7 +374,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 		  //  Determine current time
 
 		   //gettimeofday(&now0, &timz);
-			// define the output and run
+	        cout<<"Running NN CPE inference"<<endl;
  		std::vector<tensorflow::Tensor> output_x, output_y;   	
     		tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_x}, &output_x);
     		tensorflow::run(const_cast<tensorflow::Session *>(session_y), {{inputTensorName_y,cluster_flat_y}, {anglesTensorName_y,angles}}, {outputTensorName_y}, &output_y);
@@ -380,16 +382,16 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 
     	theClusterParam.NNXrec_ = output_x[0].matrix<float>()(0,0);
     	theClusterParam.NNXrec_ = theClusterParam.NNXrec_ + pixelsize_x*(mid_x); 
-    	theClusterParam.NNSigmaX_ = exp(output_x[0].matrix<float>()(0,1));
+    	theClusterParam.NNSigmaX_ = (output_x[0].matrix<float>()(0,1));
 		  //printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_); 
     	theClusterParam.NNYrec_ = output_y[0].matrix<float>()(0,0);
     	theClusterParam.NNYrec_ = theClusterParam.NNYrec_ + pixelsize_y*(mid_y);
-    	theClusterParam.NNSigmaY_ = exp(output_y[0].matrix<float>()(0,1));
+    	theClusterParam.NNSigmaY_ = (output_y[0].matrix<float>()(0,1));
 		  //printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
 
-    	if(isnan(theClusterParam.NNXrec_) or theClusterParam.NNXrec_>=1300 or isnan(theClusterParam.NNYrec_) or theClusterParam.NNYrec_>=3150 or isnan(theClusterParam.NNSigmaX_) or theClusterParam.NNSigmaX_>=1300 or isnan(theClusterParam.NNSigmaY_) or theClusterParam.NNSigmaY_>=3150){
+    	if(isnan(theClusterParam.NNXrec_) or theClusterParam.NNXrec_>=1300 or isnan(theClusterParam.NNYrec_) or theClusterParam.NNYrec_>=3150 ){
     		printf("====================== NN RECO HAS FAILED: POSITION LARGER THAN BUFFER ======================"); 
-    		printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
+    		printf("x = %f,  y = %f\n",theClusterParam.NNXrec_, theClusterParam.NNYrec_);
     		theClusterParam.ierr = 12345;
     		for(int i = 0 ; i < TXSIZE ; i++){
     			for(int j = 0 ; j < TYSIZE ; j++) 
@@ -399,7 +401,8 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 			// printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
     		for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
     	}
-    else theClusterParam.ierr = 0.;
+
+    	else theClusterParam.ierr = 0.;
 } 
   //printf("theClusterParam.ierr = %i\n",theClusterParam.ierr);
   // Check exit status
@@ -482,10 +485,13 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
 		theDetParam.theRecTopol->isItEdgePixelInX(maxPixelRow));
 	bool edgey = (theDetParam.theRecTopol->isItEdgePixelInY(minPixelCol) ||
 		theDetParam.theRecTopol->isItEdgePixelInY(maxPixelCol));
+
+	//theClusterParam.ierr = 12345; // forcibly turn off error for now
+	
 	if(isnan(theClusterParam.NNSigmaX_) or theClusterParam.NNSigmaX_>=650 or isnan(theClusterParam.NNSigmaY_) or theClusterParam.NNSigmaY_>=1575){
 		printf("====================== NN RECO HAS FAILED: ERROR LARGER THAN BUFFER ======================");
 		printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
-
+		theClusterParam.ierr = 12345;
 	}
 	if(theClusterParam.theCluster->sizeX() > 11 or theClusterParam.theCluster->sizeY() > 19){
 		edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition "
@@ -562,8 +568,8 @@ void PixelCPENNReco::fillPSetDescription(edm::ParameterSetDescription& desc) {
 	desc.add<std::string>("inputTensorName_x","input_1");
 	desc.add<std::string>("anglesTensorName_x","input_2");
 	desc.add<std::string>("outputTensorName_x","Identity");
-	desc.add<std::string>("inputTensorName_y","input_1");
-	desc.add<std::string>("anglesTensorName_y","input_2");
+	desc.add<std::string>("inputTensorName_y","input_3");
+	desc.add<std::string>("anglesTensorName_y","input_4");
 	desc.add<std::string>("outputTensorName_y","Identity");
 	desc.add<bool>("use_det_angles", false);
 	desc.add<std::string>("cpe", "cnn1d");

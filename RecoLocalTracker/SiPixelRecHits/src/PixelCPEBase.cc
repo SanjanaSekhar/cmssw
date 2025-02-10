@@ -195,12 +195,12 @@ void PixelCPEBase::fillDetParams() {
     p.bx = Bfield.x();
 
     //---  Compute the Lorentz shifts for this detector element
-   cout << "useLAFromDB_ = " << useLAFromDB_; 
+   //cout << "useLAFromDB_ = " << useLAFromDB_; 
    if (useLAFromDB_ ||
         doLorentzFromAlignment_) {  // do always for generic and if using LA from DB or alignment for templates
       p.driftDirection = driftDirection(p, Bfield);
       computeLorentzShifts(p); 
-      cout << "Computing Lorentz shifts..." << endl;
+      //cout << "Computing Lorentz shifts..." << endl;
     }
 
     LogDebug("PixelCPEBase::fillDetParams()") << "***** PIXEL LAYOUT *****"
