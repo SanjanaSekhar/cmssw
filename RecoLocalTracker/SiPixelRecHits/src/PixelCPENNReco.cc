@@ -28,6 +28,7 @@
 #include "boost/multi_array.hpp"
 
 #include <iostream>
+#include <chrono>
 
 //using namespace SiPixelTemplateReco;
 //using namespace SiPixelTemplateSplit;
@@ -96,9 +97,9 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	const bool fpix = GeomDetEnumerators::isEndcap(theDetParam.thePart);
 
 	if(fpix){
-		edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
-		<< "Network not trained on FPIX D" << ttopo_.pxfDisk(theDetParam.theDet->geographicalId().rawId())
-		<< " (BPIX L" << ttopo_.pxbLayer(theDetParam.theDet->geographicalId().rawId()) << ")";
+		//edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
+		//<< "Network not trained on FPIX D" << ttopo_.pxfDisk(theDetParam.theDet->geographicalId().rawId())
+		//<< " (BPIX L" << ttopo_.pxbLayer(theDetParam.theDet->geographicalId().rawId()) << ")";
 		theClusterParam.ierr = 12345;
 	}
   
@@ -106,22 +107,58 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	  layer = ttopo_.pxbLayer(theDetParam.theDet->geographicalId().rawId());
 	  ladder = ttopo_.pxbLadder(theDetParam.theDet->geographicalId().rawId());
 	  module = ttopo_.pxbModule(theDetParam.theDet->geographicalId().rawId());
-	  if(!fpix) cout << "BPIX layer " << layer << " ladder " << ladder << " module " << module << endl;
+	  //if(!fpix) cout << "BPIX layer " << layer << " ladder " << ladder << " module " << module << endl;
 	  
-  
+	  std::string input_1 = "input_1";
+	  std::string input_2 = "input_2";
+	  std::string input_3 = "input_3";
+	  std::string input_4 = "input_4";
+	  std::string input_5 = "input_5";
+	  std::string input_6 = "input_6";
+	  std::string input_7 = "input_7";
+	  std::string input_8 = "input_8";
+	  std::string cluster_tensor_x, angles_tensor_x, cluster_tensor_y, angles_tensor_y;
+  	  
   //outer ladders = unflipped = odd nos
   	  
 	  const tensorflow::Session* session_x; 
           const tensorflow::Session* session_y;
-	  if (layer == 1 and ladder%2 != 0) {session_x = session_x_vec.at(0); session_y = session_y_vec.at(0);}
-	  else if (layer == 1 and ladder%2 == 0) {session_x = session_x_vec.at(1); session_y = session_y_vec.at(1);}
-	  else if (layer == 2) {session_x = session_x_vec.at(2); session_y = session_y_vec.at(2);}
-	  else { theClusterParam.ierr = 12345; // turn off NN CPE for L3 and L4 for now
-		if (layer == 3 and module <= 4) {session_x = session_x_vec.at(4); session_y = session_y_vec.at(4);}
-	  else if (layer == 3 and module > 4) {session_x = session_x_vec.at(5); session_y = session_y_vec.at(5);}
-	  else if (layer == 4 and module <= 4) {session_x = session_x_vec.at(6); session_y = session_y_vec.at(6);}
-	  else if (layer == 4 and module > 4) {session_x = session_x_vec.at(7); session_y = session_y_vec.at(7);}
-  	  }
+	  if (layer == 1 and ladder%2 != 0) {
+		session_x = session_x_vec.at(0); session_y = session_y_vec.at(0);
+		cluster_tensor_x = input_1; angles_tensor_x = input_2;
+                cluster_tensor_y = input_3; angles_tensor_y = input_4;
+		}
+	  else if (layer == 1 and ladder%2 == 0) {
+		session_x = session_x_vec.at(1); session_y = session_y_vec.at(1);
+		cluster_tensor_x = input_1; angles_tensor_x = input_2; 
+		cluster_tensor_y = input_1; angles_tensor_y = input_2;
+		}
+	  else if (layer == 2) {
+		session_x = session_x_vec.at(3); session_y = session_y_vec.at(3); 
+		cluster_tensor_x = input_5; angles_tensor_x = input_6;
+                cluster_tensor_y = input_7; angles_tensor_y = input_8;	
+		} // using L2old model for all of L2
+	  else if (layer == 3 and module <= 4) {
+		session_x = session_x_vec.at(4); session_y = session_y_vec.at(4);
+		cluster_tensor_x = input_1; angles_tensor_x = input_2;
+                cluster_tensor_y = input_3; angles_tensor_y = input_4;
+		}
+	  else if (layer == 3 and module > 4) {
+		session_x = session_x_vec.at(5); session_y = session_y_vec.at(5);
+		cluster_tensor_x = input_1; angles_tensor_x = input_2;
+                cluster_tensor_y = input_3; angles_tensor_y = input_4;
+		}
+	  else if (layer == 4 and module <= 4) {
+		session_x = session_x_vec.at(6); session_y = session_y_vec.at(6);
+		cluster_tensor_x = input_1; angles_tensor_x = input_2;
+                cluster_tensor_y = input_3; angles_tensor_y = input_4;
+		}
+	  else //if (layer == 4 and module > 4) 
+		{session_x = session_x_vec.at(7); session_y = session_y_vec.at(7);
+		cluster_tensor_x = input_5; angles_tensor_x = input_6;
+                cluster_tensor_y = input_7; angles_tensor_y = input_8;
+		}
+  	  
    // Preparing to retrieve ADC counts from the SiPixeltheClusterParam.theCluster->  In the cluster,
   // we have the following:
   //   int minPixelRow(); // Minimum pixel index in the x direction (low edge).
@@ -352,7 +389,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 
     float NNYrec1_ = nonsense;
     float NNXrec1_ = nonsense;
-	cout << " theClusterParam.ierr " << theClusterParam.ierr << endl;
+    //cout << " theClusterParam.ierr " << theClusterParam.ierr << endl;
 
   //========================================================================================
  //  printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s and %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_x.c_str(),outputTensorName_y.c_str(),anglesTensorName_x.c_str());    
@@ -374,19 +411,27 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 		  //  Determine current time
 
 		   //gettimeofday(&now0, &timz);
-	        cout<<"Running NN CPE inference"<<endl;
- 		std::vector<tensorflow::Tensor> output_x, output_y;   	
-    		tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {anglesTensorName_x,angles}}, {outputTensorName_x}, &output_x);
-    		tensorflow::run(const_cast<tensorflow::Session *>(session_y), {{inputTensorName_y,cluster_flat_y}, {anglesTensorName_y,angles}}, {outputTensorName_y}, &output_y);
-    	
+	 //cout<<"Running NN CPE inference"<<endl;
+ 	 std::vector<tensorflow::Tensor> output_x, output_y;   	
+    		
 
-    	theClusterParam.NNXrec_ = output_x[0].matrix<float>()(0,0);
+		auto start = std::chrono::high_resolution_clock::now(); 
+
+		tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{cluster_tensor_x,cluster_flat_x}, {angles_tensor_x,angles}}, {outputTensorName_x}, &output_x);
+    		tensorflow::run(const_cast<tensorflow::Session *>(session_y), {{cluster_tensor_y,cluster_flat_y}, {angles_tensor_y,angles}}, {outputTensorName_y}, &output_y);
+    	
+		auto end = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    		std::cout << "Execution time: " << duration.count() << " microseconds" << std::endl;
+    	
+	theClusterParam.NNXrec_ = output_x[0].matrix<float>()(0,0);
     	theClusterParam.NNXrec_ = theClusterParam.NNXrec_ + pixelsize_x*(mid_x); 
-    	theClusterParam.NNSigmaX_ = (output_x[0].matrix<float>()(0,1));
+    	theClusterParam.NNSigmaX_ = sqrt(output_x[0].matrix<float>()(0,1));
 		  //printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_); 
     	theClusterParam.NNYrec_ = output_y[0].matrix<float>()(0,0);
     	theClusterParam.NNYrec_ = theClusterParam.NNYrec_ + pixelsize_y*(mid_y);
-    	theClusterParam.NNSigmaY_ = (output_y[0].matrix<float>()(0,1));
+    	theClusterParam.NNSigmaY_ = sqrt(output_y[0].matrix<float>()(0,1));
 		  //printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
 
     	if(isnan(theClusterParam.NNXrec_) or theClusterParam.NNXrec_>=1300 or isnan(theClusterParam.NNYrec_) or theClusterParam.NNYrec_>=3150 ){
@@ -490,7 +535,7 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
 	
 	if(isnan(theClusterParam.NNSigmaX_) or theClusterParam.NNSigmaX_>=650 or isnan(theClusterParam.NNSigmaY_) or theClusterParam.NNSigmaY_>=1575){
 		printf("====================== NN RECO HAS FAILED: ERROR LARGER THAN BUFFER ======================");
-		printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
+		printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_*1e4, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_*1e4, theClusterParam.NNSigmaY_);
 		theClusterParam.ierr = 12345;
 	}
 	if(theClusterParam.theCluster->sizeX() > 11 or theClusterParam.theCluster->sizeY() > 19){

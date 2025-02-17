@@ -25,7 +25,7 @@
 #include "boost/multi_array.hpp"
 
 #include <iostream>
-
+#include <chrono>
 using namespace SiPixelTemplateReco;
 //using namespace SiPixelTemplateSplit;
 using namespace std;
@@ -234,6 +234,10 @@ LocalPoint PixelCPETemplateReco::localPosition(DetParam const& theDetParam, Clus
 
   float locBz = theDetParam.bz;
   float locBx = theDetParam.bx;
+  
+
+
+  auto start = std::chrono::high_resolution_clock::now();
 
   theClusterParam.ierr = PixelTempReco1D(ID,
                                          theClusterParam.cotalpha,
@@ -251,7 +255,10 @@ LocalPoint PixelCPETemplateReco::localPosition(DetParam const& theDetParam, Clus
                                          theClusterParam.templQbin_,
                                          speed_,
                                          theClusterParam.templProbQ_);
-
+  
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "Execution time: " << duration.count() << " microseconds" << std::endl;
   // ******************************************************************
 
   // Check exit status

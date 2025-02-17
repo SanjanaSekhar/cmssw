@@ -20,6 +20,7 @@
 #include <map>
 
 #include <iostream>
+#include <chrono>
 
 using namespace SiPixelTemplateReco;
 //using namespace SiPixelTemplateSplit;
@@ -335,7 +336,9 @@ void PixelCPEClusterRepair::callTempReco1D(DetParam const& theDetParam,
   const bool deadpix = false;
   std::vector<std::pair<int, int>> zeropix;
   int nypix = 0, nxpix = 0;
-  //
+  
+  auto start = std::chrono::high_resolution_clock::now();
+
   theClusterParam.ierr = PixelTempReco1D(ID,
                                          theClusterParam.cotalpha,
                                          theClusterParam.cotbeta,
@@ -356,6 +359,10 @@ void PixelCPEClusterRepair::callTempReco1D(DetParam const& theDetParam,
                                          theClusterParam.probabilityQ_,
                                          nypix,
                                          nxpix);
+  
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "Execution time: " << duration.count() << " microseconds" << std::endl;
   // ******************************************************************
 
   //--- Check exit status
