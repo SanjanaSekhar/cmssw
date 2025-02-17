@@ -18,8 +18,7 @@ L1U_x = _tfGraphDefProducer_x.clone(
 
 L1F_x = _tfGraphDefProducer_x.clone(
     ComponentName = "L1F_x",
-    #FileName = "/uscms_data/d1/ssekhar/CMSSW_14_0_1/src/graphs/graph_x_1dcnn_p1_2024_BPIX_L1F_d21901_d22100_030524.pb"
-    FileName = "graphs/graph_x_L1_U.pb" # need to change this
+    FileName = "graphs/graph_x_L1_F.pb"
 )
 
 L2new_x = _tfGraphDefProducer_x.clone(
@@ -38,7 +37,7 @@ L3m_x = _tfGraphDefProducer_x.clone(
 
 L3p_x = _tfGraphDefProducer_x.clone(
     ComponentName = "L3p_x",
-    FileName = "graphs/graph_x_L3m.pb" # need to change this
+    FileName = "graphs/graph_x_L3p.pb"
 )
 
 L4m_x = _tfGraphDefProducer_x.clone(
@@ -64,8 +63,7 @@ L1U_y = _tfGraphDefProducer_y.clone(
 
 L1F_y = _tfGraphDefProducer_y.clone(
     ComponentName = "L1F_y",
-    # FileName = "/uscms_data/d1/ssekhar/CMSSW_14_0_1/src/graphs/graph_y_1dcnn_p1_2024_BPIX_L1F_d21901_d22100_030524.pb"
-    FileName = "graphs/graph_y_L1_U.pb"
+    FileName = "graphs/graph_y_L1_F.pb"
 )
 L2new_y = _tfGraphDefProducer_y.clone(
     ComponentName = "L2new_y",
