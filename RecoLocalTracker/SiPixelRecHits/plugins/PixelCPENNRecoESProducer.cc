@@ -134,6 +134,7 @@ std::unique_ptr<PixelClusterParameterEstimator> PixelCPENNRecoESProducer::produc
   //  sessions_x.push_back(iRecord.get(tfDnnToken_x[i]).getSession());
   //  sessions_y.push_back(iRecord.get(tfDnnToken_y[i]).getSession());
   //}
+  //tensorflow::Options options{tensorflow::Backend::cuda};
   for(auto token : tfDnnTokens_x) sessions_x.emplace_back(iRecord.get(token).getSession());
   for(auto token : tfDnnTokens_y) sessions_y.emplace_back(iRecord.get(token).getSession());
 

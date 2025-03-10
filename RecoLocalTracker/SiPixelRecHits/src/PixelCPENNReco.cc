@@ -60,10 +60,12 @@ PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
 	session_y_vec = session_y_vec_;
 	inputTensorName_x = conf.getParameter<std::string>("inputTensorName_x");
 	anglesTensorName_x = conf.getParameter<std::string>("anglesTensorName_x");
+	pixmaxTensorName_x = conf.getParameter<std::string>("pixmaxTensorName_x");
 	outputTensorName_x = conf.getParameter<std::string>("outputTensorName_x");
 
 	inputTensorName_y = conf.getParameter<std::string>("inputTensorName_y");
 	anglesTensorName_y = conf.getParameter<std::string>("anglesTensorName_y");
+	pixmaxTensorName_y = conf.getParameter<std::string>("pixmaxTensorName_y");
 	outputTensorName_y = conf.getParameter<std::string>("outputTensorName_y");
 
 	cpe = conf.getParameter<std::string>("cpe");
@@ -108,7 +110,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	  ladder = ttopo_.pxbLadder(theDetParam.theDet->geographicalId().rawId());
 	  module = ttopo_.pxbModule(theDetParam.theDet->geographicalId().rawId());
 	  //if(!fpix) cout << "BPIX layer " << layer << " ladder " << ladder << " module " << module << endl;
-	  
+	  /*
 	  std::string input_1 = "input_1";
 	  std::string input_2 = "input_2";
 	  std::string input_3 = "input_3";
@@ -118,45 +120,46 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	  std::string input_7 = "input_7";
 	  std::string input_8 = "input_8";
 	  std::string cluster_tensor_x, angles_tensor_x, cluster_tensor_y, angles_tensor_y;
-  	  
+  	  */
   //outer ladders = unflipped = odd nos
   	  
 	  const tensorflow::Session* session_x; 
           const tensorflow::Session* session_y;
 	  if (layer == 1 and ladder%2 != 0) {
 		session_x = session_x_vec.at(0); session_y = session_y_vec.at(0);
-		cluster_tensor_x = input_1; angles_tensor_x = input_2;
-                cluster_tensor_y = input_3; angles_tensor_y = input_4;
+		//cluster_tensor_x = input_1; angles_tensor_x = input_2;
+                //cluster_tensor_y = input_3; angles_tensor_y = input_4;
 		}
 	  else if (layer == 1 and ladder%2 == 0) {
 		session_x = session_x_vec.at(1); session_y = session_y_vec.at(1);
-		cluster_tensor_x = input_1; angles_tensor_x = input_2; 
-		cluster_tensor_y = input_1; angles_tensor_y = input_2;
+		//cluster_tensor_x = input_1; angles_tensor_x = input_2; 
+		//cluster_tensor_y = input_1; angles_tensor_y = input_2;
 		}
 	  else if (layer == 2) {
 		session_x = session_x_vec.at(3); session_y = session_y_vec.at(3); 
-		cluster_tensor_x = input_5; angles_tensor_x = input_6;
-                cluster_tensor_y = input_7; angles_tensor_y = input_8;	
+		//cluster_tensor_x = input_5; angles_tensor_x = input_6;
+                //cluster_tensor_y = input_7; angles_tensor_y = input_8;
+		theClusterParam.ierr = 12345;
 		} // using L2old model for all of L2
 	  else if (layer == 3 and module <= 4) {
 		session_x = session_x_vec.at(4); session_y = session_y_vec.at(4);
-		cluster_tensor_x = input_1; angles_tensor_x = input_2;
-                cluster_tensor_y = input_3; angles_tensor_y = input_4;
+		//cluster_tensor_x = input_1; angles_tensor_x = input_2;
+                //cluster_tensor_y = input_3; angles_tensor_y = input_4;
 		}
 	  else if (layer == 3 and module > 4) {
 		session_x = session_x_vec.at(5); session_y = session_y_vec.at(5);
-		cluster_tensor_x = input_1; angles_tensor_x = input_2;
-                cluster_tensor_y = input_3; angles_tensor_y = input_4;
+		//cluster_tensor_x = input_1; angles_tensor_x = input_2;
+                //cluster_tensor_y = input_3; angles_tensor_y = input_4;
 		}
 	  else if (layer == 4 and module <= 4) {
 		session_x = session_x_vec.at(6); session_y = session_y_vec.at(6);
-		cluster_tensor_x = input_1; angles_tensor_x = input_2;
-                cluster_tensor_y = input_3; angles_tensor_y = input_4;
+		//cluster_tensor_x = input_1; angles_tensor_x = input_2;
+                //cluster_tensor_y = input_3; angles_tensor_y = input_4;
 		}
 	  else //if (layer == 4 and module > 4) 
 		{session_x = session_x_vec.at(7); session_y = session_y_vec.at(7);
-		cluster_tensor_x = input_5; angles_tensor_x = input_6;
-                cluster_tensor_y = input_7; angles_tensor_y = input_8;
+		//cluster_tensor_x = input_5; angles_tensor_x = input_6;
+                //cluster_tensor_y = input_7; angles_tensor_y = input_8;
 		}
   	  
    // Preparing to retrieve ADC counts from the SiPixeltheClusterParam.theCluster->  In the cluster,
@@ -217,6 +220,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	assert(mcol > 0);
 
 	float clustMatrix[TXSIZE][TYSIZE], clustMatrix_temp[TXSIZE][TYSIZE], clustMatrix_x[TXSIZE], clustMatrix_y[TYSIZE];
+	float cluster_charge = 0, norm_charge = 25000.;
 	memset(clustMatrix, 0, sizeof(float) * TXSIZE * TYSIZE);
 	memset(clustMatrix_temp, 0, sizeof(float) * TXSIZE * TYSIZE);
 	memset(clustMatrix_x, 0, sizeof(float) * TXSIZE);
@@ -306,9 +310,13 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 				<< "Pixel adc is NaN !!! ";
 			}
 	//printf("%i\n",pix.adc);	
-			clustMatrix_temp[irow][icol] = float(pix.adc)/25000.;
+			cluster_charge += float(pix.adc);
+			clustMatrix_temp[irow][icol] = float(pix.adc)/norm_charge;
 		}
 	}
+	// divide sum of pixel charges by 25000
+	cluster_charge/=norm_charge;
+	
 
 	if(clustersize_x > 11 or clustersize_y > 19) {
 		edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition"
@@ -373,6 +381,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 //compute the 1d projection 
 	for(int i = 0;i < TXSIZE; i++){
 		for(int j = 0; j < TYSIZE; j++){
+			if (clustMatrix[i][j] > cluster_charge) clustMatrix[i][j] = cluster_charge;
 			clustMatrix_x[i] += clustMatrix[i][j];
 		}
 	}
@@ -400,8 +409,11 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 		  //tensorflow::Tensor cluster_(tensorflow::DT_FLOAT, {1,TXSIZE,TYSIZE,1});
 			// angles
     	tensorflow::Tensor angles(tensorflow::DT_FLOAT, {1,2});
+	tensorflow::Tensor pixmax(tensorflow::DT_FLOAT, {1,1});
+
     	angles.tensor<float,2>()(0, 0) = theClusterParam.cotalpha;
     	angles.tensor<float,2>()(0, 1) = theClusterParam.cotbeta;
+	pixmax.tensor<float,2>()(0, 0) = cluster_charge;
 
     	for (int i = 0; i < TXSIZE; i++) 
     		cluster_flat_x.tensor<float,3>()(0, i, 0) = clustMatrix_x[i];
@@ -417,8 +429,8 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 
 		auto start = std::chrono::high_resolution_clock::now(); 
 
-		tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{cluster_tensor_x,cluster_flat_x}, {angles_tensor_x,angles}}, {outputTensorName_x}, &output_x);
-    		tensorflow::run(const_cast<tensorflow::Session *>(session_y), {{cluster_tensor_y,cluster_flat_y}, {angles_tensor_y,angles}}, {outputTensorName_y}, &output_y);
+		tensorflow::run(const_cast<tensorflow::Session *>(session_x), {{inputTensorName_x,cluster_flat_x}, {pixmaxTensorName_x,pixmax}, {anglesTensorName_x,angles}}, {outputTensorName_x}, &output_x);
+    		tensorflow::run(const_cast<tensorflow::Session *>(session_y), {{inputTensorName_y,cluster_flat_y}, {pixmaxTensorName_y,pixmax}, {anglesTensorName_y,angles}}, {outputTensorName_y}, &output_y);
     	
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -610,11 +622,13 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
 
 void PixelCPENNReco::fillPSetDescription(edm::ParameterSetDescription& desc) {
 
-	desc.add<std::string>("inputTensorName_x","input_1");
-	desc.add<std::string>("anglesTensorName_x","input_2");
+	desc.add<std::string>("inputTensorName_x","pixel_projection_x");
+	desc.add<std::string>("anglesTensorName_x","angles");
+	desc.add<std::string>("pixmaxTensorName_x","cluster_charge");
 	desc.add<std::string>("outputTensorName_x","Identity");
-	desc.add<std::string>("inputTensorName_y","input_3");
-	desc.add<std::string>("anglesTensorName_y","input_4");
+	desc.add<std::string>("inputTensorName_y","pixel_projection_y");
+	desc.add<std::string>("anglesTensorName_y","angles");
+	desc.add<std::string>("pixmaxTensorName_y","cluster_charge");
 	desc.add<std::string>("outputTensorName_y","Identity");
 	desc.add<bool>("use_det_angles", false);
 	desc.add<std::string>("cpe", "cnn1d");

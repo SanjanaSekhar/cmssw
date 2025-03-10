@@ -100,7 +100,7 @@ private:
   std::string templateDir_;
 
   std::string graphPath_x, graphPath_y;
-  std::string inputTensorName_x, inputTensorName_y, anglesTensorName_x, anglesTensorName_y;
+  std::string inputTensorName_x, inputTensorName_y, anglesTensorName_x, anglesTensorName_y, pixmaxTensorName_x, pixmaxTensorName_y;
   std::string outputTensorName_x, outputTensorName_y;
   //std::string     fRootFileName;
 
