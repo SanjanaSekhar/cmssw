@@ -4,14 +4,8 @@
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEBase.h"
 #include "PhysicsTools/TensorFlow/interface/TensorFlow.h"
 
-// Already in the base class
-//#include "Geometry/CommonDetUnit/interface/GeomDetType.h"
-//#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
-//#include "Geometry/TrackerGeometryBuilder/interface/RectangularPixelTopology.h"
-//#include "Geometry/CommonDetAlgo/interface/MeasurementPoint.h"
-//#include "Geometry/CommonDetAlgo/interface/MeasurementError.h"
-//#include "Geometry/Surface/interface/GloballyPositioned.h"
-//#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "CondFormats/SiPixelTransient/interface/SiPixelGenError.h"
+#include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEGenericBase.h"
 
 #ifndef SI_PIXEL_TEMPLATE_STANDALONE
 #include "CondFormats/SiPixelTransient/interface/SiPixelTemplate.h"
@@ -35,7 +29,7 @@
 
 //tensorflow::setLogging("3");
 class MagneticField;
-class PixelCPENNReco : public PixelCPEBase{
+class PixelCPENNReco : public PixelCPEGenericBase{
 public:
   struct ClusterParamTemplate : ClusterParam {
     ClusterParamTemplate(const SiPixelCluster &cl) : ClusterParam(cl) {}
@@ -65,7 +59,7 @@ public:
                        const TrackerGeometry &,
                        const TrackerTopology &,
                        const SiPixelLorentzAngle *,
-                     //  const SiPixelTemplateDBObject *,
+                       const SiPixelGenErrorDBObject *,
                        std::vector<const tensorflow::Session *> ,
                        std::vector<const tensorflow::Session *> 
                        ) ;
@@ -88,7 +82,9 @@ private:
   LocalError localError(DetParam const &theDetParam, ClusterParam &theClusterParam) const override;
 
   // Template storage
-  std::vector<SiPixelTemplateStore> thePixelTemp_;
+  // std::vector<SiPixelTemplateStore> thePixelTemp_;
+  //--- DB Error Parametrization object, new light templates
+  std::vector<SiPixelGenErrorStore> thePixelGenError_;
 
   int speed_;
 
@@ -100,7 +96,7 @@ private:
   std::string templateDir_;
 
   std::string graphPath_x, graphPath_y;
-  std::string inputTensorName_x, inputTensorName_y, anglesTensorName_x, anglesTensorName_y, pixmaxTensorName_x, pixmaxTensorName_y;
+  std::string inputTensorName_x, inputTensorName_y, anglesTensorName_x, anglesTensorName_y, cchargeTensorName_x, cchargeTensorName_y;
   std::string outputTensorName_x, outputTensorName_y;
   //std::string     fRootFileName;
 

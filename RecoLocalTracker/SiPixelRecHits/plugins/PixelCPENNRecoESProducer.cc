@@ -7,6 +7,7 @@
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
+#include "CondFormats/DataRecord/interface/SiPixelGenErrorDBObjectRcd.h"
 
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/ESHandle.h"
@@ -44,6 +45,7 @@ private:
   edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> hTTToken_;
   edm::ESGetToken<SiPixelLorentzAngle, SiPixelLorentzAngleRcd> lorentzAngleToken_;
   edm::ESGetToken<SiPixelTemplateDBObject, SiPixelTemplateDBObjectESProducerRcd> templateDBobjectToken_;
+  edm::ESGetToken<SiPixelGenErrorDBObject, SiPixelGenErrorDBObjectRcd> genErrorDBObjectToken_;
 
   std::string tfDnnLabel_L1U_x, tfDnnLabel_L1F_x, tfDnnLabel_L2new_x, tfDnnLabel_L2old_x, tfDnnLabel_L3m_x, tfDnnLabel_L3p_x, tfDnnLabel_L4m_x, tfDnnLabel_L4p_x;
   std::string tfDnnLabel_L1U_y, tfDnnLabel_L1F_y, tfDnnLabel_L2new_y, tfDnnLabel_L2old_y, tfDnnLabel_L3m_y, tfDnnLabel_L3p_y, tfDnnLabel_L4m_y, tfDnnLabel_L4p_y;
@@ -101,7 +103,7 @@ PixelCPENNRecoESProducer::PixelCPENNRecoESProducer(const edm::ParameterSet& p) {
   magfieldToken_ = c.consumes();
   pDDToken_ = c.consumes();
   hTTToken_ = c.consumes();
- // templateDBobjectToken_ = c.consumes();
+  genErrorDBObjectToken_ = c.consumes();
   //for(i = 0; i < int(tfDnnLabel_x.size()); i++){
   //  tfDnnToken_x.push_back(c.consumes<TfGraphDefWrapper, TfGraphRecord>(edm::ESInputTag("", tfDnnLabel_x[i])));
   //  tfDnnToken_y.push_back(c.consumes<TfGraphDefWrapper, TfGraphRecord>(edm::ESInputTag("", tfDnnLabel_y[i])));
@@ -129,6 +131,7 @@ std::unique_ptr<PixelClusterParameterEstimator> PixelCPENNRecoESProducer::produc
   if (useLAFromDB_ || doLorentzFromAlignment_) {
     lorentzAngleProduct = &iRecord.get(lorentzAngleToken_);
   }
+  //const SiPixelGenErrorDBObject* genErrorDBObjectProduct = nullptr;
   //const tensorflow::Session* session = nullptr;
   //for(i = 0; i < int(tfDnnLabel_x.size()); i++){
   //  sessions_x.push_back(iRecord.get(tfDnnToken_x[i]).getSession());
@@ -143,7 +146,7 @@ std::unique_ptr<PixelClusterParameterEstimator> PixelCPENNRecoESProducer::produc
                                                 iRecord.get(pDDToken_),
                                                 iRecord.get(hTTToken_),
                                                 lorentzAngleProduct,
-                                                //&iRecord.get(templateDBobjectToken_),
+                                                &iRecord.get(genErrorDBObjectToken_),
                                                 //iRecord.getData(tfDnnToken_).getSession()
                                                 sessions_x,
                                                 sessions_y);
@@ -159,6 +162,7 @@ void PixelCPENNRecoESProducer::fillDescriptions(edm::ConfigurationDescriptions& 
   // from PixelCPETemplateReco
   PixelCPETemplateReco::fillPSetDescription(desc);
   PixelCPENNReco::fillPSetDescription(desc);
+  //PixelCPEGenericBase::fillPSetDescription(desc);
   // specific to PixelCPENNRecoESProducer
   desc.add<std::string>("ComponentName", "PixelCPENNReco");
 
@@ -181,6 +185,8 @@ void PixelCPENNRecoESProducer::fillDescriptions(edm::ConfigurationDescriptions& 
   desc.add<std::string>("tfDnnLabel_L4p_y", "L4p_y");    
 
   descriptions.add("_templates_NN_default",desc);
+
+          
 }
 
 DEFINE_FWK_EVENTSETUP_MODULE(PixelCPENNRecoESProducer);
