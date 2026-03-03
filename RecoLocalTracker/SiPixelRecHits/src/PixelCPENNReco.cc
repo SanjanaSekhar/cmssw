@@ -509,16 +509,17 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 		  //printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
 
     	if(isnan(theClusterParam.NNXrec_) or theClusterParam.NNXrec_>=1300 or isnan(theClusterParam.NNYrec_) or theClusterParam.NNYrec_>=3150 ){
-    		printf("====================== NN RECO HAS FAILED: POSITION LARGER THAN BUFFER ======================"); 
+    		theClusterParam.ierr = 12345;
+		/*
+		printf("====================== NN RECO HAS FAILED: POSITION LARGER THAN BUFFER ======================"); 
     		cout << "BPIX layer " << layer << " ladder " << ladder << " module " << module << endl;	
 		printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
-    		theClusterParam.ierr = 12345;
+    		
     		for(int i = 0 ; i < TXSIZE ; i++){
     			for(int j = 0 ; j < TYSIZE ; j++) 
     				printf("%.2f ",clustMatrix[i][j]);
     			printf("\n");
-    		}
-		
+    		}	
 		printf(" cota = %.2f, cotb = %.2f, cchargeTensorName_x = %s, inputTensorname_x = %s, outputTensorName_x = %s, anglesTensorName_x = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, cchargeTensorName_x.c_str(), inputTensorName_x.c_str(),outputTensorName_x.c_str(),anglesTensorName_x.c_str());
                 printf("cchargeTensorName_y = %s, inputTensorname_y = %s, outputTensorName_y = %s, anglesTensorName_y = %s\n", cchargeTensorName_y.c_str(), inputTensorName_y.c_str(),outputTensorName_y.c_str(),anglesTensorName_y.c_str());
                 cout << "Flattened cluster in x" << endl;
@@ -527,12 +528,14 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 		cout << "Flattened cluster in y" << endl;
                 for(int i = 0; i < TYSIZE; i++) printf("%.2f ", cluster_flat_y.tensor<float,3>()(0, i, 0));
 		printf("\n");
+		*/
 	}
 	else if(isnan(theClusterParam.NNSigmaX_) or theClusterParam.NNSigmaX_>=650 or isnan(theClusterParam.NNSigmaY_) or theClusterParam.NNSigmaY_>=1575){
-                printf("====================== NN RECO HAS FAILED: ERROR LARGER THAN BUFFER ======================");
+                theClusterParam.ierr = 12345;
+		/*
+		printf("====================== NN RECO HAS FAILED: ERROR LARGER THAN BUFFER ======================");
                 cout << "BPIX layer " << layer << " ladder " << ladder << " module " << module << endl;
 		printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
-                theClusterParam.ierr = 12345;
 
         	 for(int i = 0 ; i < TXSIZE ; i++){
                         for(int j = 0 ; j < TYSIZE ; j++)
@@ -545,6 +548,7 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
     		printf("\n");
 		for(int i = 0; i < TYSIZE; i++) printf("%.2f ", cluster_flat_y.tensor<float,3>()(0, i, 0));
 		printf("\n");
+		*/
 		}
     	else theClusterParam.ierr = 0.;
 } 
@@ -591,7 +595,8 @@ if(theClusterParam.ierr != 0) {
   if (theClusterParam.ierr == 0){
   	theClusterParam.hasFilledProb_ = true;
   	//printf("x = %f, x_err = %f,  y = %f,  y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_ );
-  	if (theClusterParam.NNSigmaX_ == 0 or theClusterParam.NNSigmaY_ == 0){
+  	/*
+	if (theClusterParam.NNSigmaX_ == 0 or theClusterParam.NNSigmaY_ == 0){
 
 		cout << "NN CPE ERROR is 0 in x or y!" << endl;
 		cout << "alpha = " << theClusterParam.cotalpha << " beta = " << theClusterParam.cotbeta << " pixmax = " << pixmax << endl;
@@ -602,6 +607,7 @@ if(theClusterParam.ierr != 0) {
 			}
 
 		}
+		*/
 	}
   return LocalPoint(theClusterParam.NNXrec_, theClusterParam.NNYrec_);
 }
