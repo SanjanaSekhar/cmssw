@@ -184,7 +184,7 @@ void PixelCPENNRecoESProducer::fillDescriptions(edm::ConfigurationDescriptions& 
   desc.add<std::string>("tfDnnLabel_L4m_y", "L4m_y");
   desc.add<std::string>("tfDnnLabel_L4p_y", "L4p_y");    
 
-  descriptions.add("_templates_NN_default",desc);
+  descriptions.add("_NN_default",desc);
 
           
 }

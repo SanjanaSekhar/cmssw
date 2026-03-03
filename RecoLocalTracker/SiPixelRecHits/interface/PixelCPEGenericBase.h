@@ -31,6 +31,13 @@ public:
     float dy2{};     // CPE Generic y-bias for single double-pixel cluster
     float dx1{};     // CPE Generic x-bias for single single-pixel cluster
     float dx2{};     // CPE Generic x-bias for single double-pixel cluster
+
+   // variables for NN reco
+    float NNXrec_;
+    float NNYrec_;
+    float NNSigmaX_;
+    float NNSigmaY_;
+    float ierr;
   };
 
   PixelCPEGenericBase(edm::ParameterSet const& conf,

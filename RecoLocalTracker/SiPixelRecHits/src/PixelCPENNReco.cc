@@ -73,6 +73,11 @@ PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
 	outputTensorName_y = conf.getParameter<std::string>("outputTensorName_y");
 
 	cpe = conf.getParameter<std::string>("cpe");
+	
+	// float theClusterParam.NNXrec_ =  -99999.9f;
+	// float theClusterParam.NNYrec_ =  -99999.9f;
+	// float theClusterParam.NNSigmaX_ =  -99999.9f;
+	// float theClusterParam.NNSigmaY_ = -99999.9f;
 
 	if (!SiPixelGenError::pushfile(*genErrorDBObject_, thePixelGenError_))
       throw cms::Exception("InvalidCalibrationLoaded")
@@ -85,9 +90,9 @@ PixelCPENNReco::PixelCPENNReco(edm::ParameterSet const& conf,
 //-----------------------------------------------------------------------------
 PixelCPENNReco::~PixelCPENNReco() {}
 
-std::unique_ptr<PixelCPEBase::ClusterParam> PixelCPENNReco::createClusterParam(const SiPixelCluster& cl) const {
-	return std::make_unique<ClusterParamTemplate>(cl);
-}
+//std::unique_ptr<PixelCPEBase::ClusterParam> PixelCPENNReco::createClusterParam(const SiPixelCluster& cl) const {
+//	return std::make_unique<ClusterParamTemplate>(cl);
+//}
 
 //------------------------------------------------------------------
 //  Public methods mandated by the base class.
@@ -99,8 +104,8 @@ std::unique_ptr<PixelCPEBase::ClusterParam> PixelCPENNReco::createClusterParam(c
 LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterParam& theClusterParamBase) const {
 	
        
-	ClusterParamTemplate& theClusterParam = static_cast<ClusterParamTemplate&>(theClusterParamBase);
-	ClusterParamGeneric& theClusterParam_ge = static_cast<ClusterParamGeneric&>(theClusterParamBase);
+	//ClusterParamTemplate& theClusterParam = static_cast<ClusterParamTemplate&>(theClusterParamBase);
+	ClusterParamGeneric& theClusterParam = static_cast<ClusterParamGeneric&>(theClusterParamBase);
 
 	theClusterParam.ierr = 0;
 
@@ -120,7 +125,8 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	  layer = ttopo_.pxbLayer(theDetParam.theDet->geographicalId().rawId());
 	  ladder = ttopo_.pxbLadder(theDetParam.theDet->geographicalId().rawId());
 	  module = ttopo_.pxbModule(theDetParam.theDet->geographicalId().rawId());
-	  if(!fpix) cout << "BPIX layer " << layer << " ladder " << ladder << " module " << module << endl;
+	  //if (fpix) cout << "FPIX disk " << ttopo_.pxfDisk(theDetParam.theDet->geographicalId().rawId()) << endl;
+	  // else cout << "BPIX layer " << layer << " ladder " << ladder << " module " << module << endl;
 	  /*
 	  std::string input_1 = "input_1";
 	  std::string input_2 = "input_2";
@@ -140,16 +146,19 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 		session_x = session_x_vec.at(0); session_y = session_y_vec.at(0);
 		//cluster_tensor_x = input_1; angles_tensor_x = input_2;
                 //cluster_tensor_y = input_3; angles_tensor_y = input_4;
+                //ierr = 12345;
 		}
 	  else if (layer == 1 and ladder%2 == 0) {
 		session_x = session_x_vec.at(1); session_y = session_y_vec.at(1);
 		//cluster_tensor_x = input_1; angles_tensor_x = input_2; 
 		//cluster_tensor_y = input_1; angles_tensor_y = input_2;
+		//ierr = 12345;
 		}
 	  else if (layer == 2) {
 		session_x = session_x_vec.at(1); session_y = session_y_vec.at(1); 
 		//cluster_tensor_x = input_5; angles_tensor_x = input_6;
                 //cluster_tensor_y = input_7; angles_tensor_y = input_8;
+		theClusterParam.ierr = 12345;
 		
 		} // using L2old model for all of L2
 	  else if (layer == 3 and module <= 4) {
@@ -395,14 +404,14 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	float locBx = theDetParam.bx;
 	// LogDebug("PixelCPEFast") << "PixelCPEFast::localPosition(...) : locBz = " << locBz;
   
-	theClusterParam_ge.pixmx = std::numeric_limits<int>::max();  // max pixel charge for truncation of 2-D cluster
+	theClusterParam.pixmx = std::numeric_limits<int>::max();  // max pixel charge for truncation of 2-D cluster
   
-	theClusterParam_ge.sigmay = -999.9;  // CPE Generic y-error for multi-pixel cluster
-	theClusterParam_ge.sigmax = -999.9;  // CPE Generic x-error for multi-pixel cluster
-	theClusterParam_ge.sy1 = -999.9;     // CPE Generic y-error for single single-pixel
-	theClusterParam_ge.sy2 = -999.9;     // CPE Generic y-error for single double-pixel cluster
-	theClusterParam_ge.sx1 = -999.9;     // CPE Generic x-error for single single-pixel cluster
-	theClusterParam_ge.sx2 = -999.9;     // CPE Generic x-error for single double-pixel cluster
+	theClusterParam.sigmay = -999.9;  // CPE Generic y-error for multi-pixel cluster
+	theClusterParam.sigmax = -999.9;  // CPE Generic x-error for multi-pixel cluster
+	theClusterParam.sy1 = -999.9;     // CPE Generic y-error for single single-pixel
+	theClusterParam.sy2 = -999.9;     // CPE Generic y-error for single double-pixel cluster
+	theClusterParam.sx1 = -999.9;     // CPE Generic x-error for single single-pixel cluster
+	theClusterParam.sx2 = -999.9;     // CPE Generic x-error for single double-pixel cluster
   
 	float dummy;
 	float qclus = 20000.;
@@ -412,28 +421,28 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	int gtemplID = theDetParam.detTemplateId;
   
 	theClusterParam.qBin_ = gtempl.qbin(gtemplID,
-										theClusterParam_ge.cotalpha,
-										theClusterParam_ge.cotbeta,
-										locBz,
-										locBx,
-										qclus,
-										IBC,
-										theClusterParam_ge.pixmx,
-										theClusterParam_ge.sigmay,
-										dummy,
-										theClusterParam_ge.sigmax,
-										dummy,
-										theClusterParam_ge.sy1,
-										dummy,
-										theClusterParam_ge.sy2,
-										dummy,
-										theClusterParam_ge.sx1,
-										dummy,
-										theClusterParam_ge.sx2,
-										dummy);
+					theClusterParam.cotalpha,
+					theClusterParam.cotbeta,
+					locBz,
+					locBx,
+					qclus,
+					IBC,
+					theClusterParam.pixmx,
+					theClusterParam.sigmay,
+					dummy,
+					theClusterParam.sigmax,
+					dummy,
+					theClusterParam.sy1,
+					dummy,
+					theClusterParam.sy2,
+					dummy,
+					theClusterParam.sx1,
+					dummy,
+					theClusterParam.sx2,
+					dummy);
   
-	pixmax = theClusterParam_ge.pixmx/norm_charge;
-	cout << " theClusterParam_ge.pixmx =  " << pixmax << endl;
+	pixmax = theClusterParam.pixmx/norm_charge;
+	//cout << " theClusterParam.pixmx =  " << pixmax << endl;
 	
 	//compute the 1d projection 
 	for(int i = 0;i < TXSIZE; i++){
@@ -449,15 +458,9 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 	}
 	
 	
-										// Output:
-    float nonsense = -99999.9f;  // nonsense init value
-    theClusterParam.NNXrec_ = theClusterParam.NNYrec_ = theClusterParam.NNSigmaX_ =
-    theClusterParam.NNSigmaY_ = nonsense;
+// Output:
 
-
-    float NNYrec1_ = nonsense;
-    float NNXrec1_ = nonsense;
-    cout << " theClusterParam.ierr " << theClusterParam.ierr << endl;
+  
 
   //========================================================================================
  //  printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s and %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_x.c_str(),outputTensorName_y.c_str(),anglesTensorName_x.c_str());    
@@ -494,38 +497,63 @@ LocalPoint PixelCPENNReco::localPosition(DetParam const& theDetParam, ClusterPar
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-    		std::cout << "Execution time: " << duration.count() << " microseconds" << std::endl;
+    		//std::cout << "Execution time: " << duration.count() << " microseconds" << std::endl;
     	
 	theClusterParam.NNXrec_ = output_x[0].matrix<float>()(0,0);
     	theClusterParam.NNXrec_ = theClusterParam.NNXrec_ + pixelsize_x*(mid_x); 
-    	theClusterParam.NNSigmaX_ = sqrt(output_x[0].matrix<float>()(0,1));
+    	theClusterParam.NNSigmaX_ = output_x[0].matrix<float>()(0,1);
 		  //printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_); 
     	theClusterParam.NNYrec_ = output_y[0].matrix<float>()(0,0);
     	theClusterParam.NNYrec_ = theClusterParam.NNYrec_ + pixelsize_y*(mid_y);
-    	theClusterParam.NNSigmaY_ = sqrt(output_y[0].matrix<float>()(0,1));
+    	theClusterParam.NNSigmaY_ = output_y[0].matrix<float>()(0,1);
 		  //printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
 
     	if(isnan(theClusterParam.NNXrec_) or theClusterParam.NNXrec_>=1300 or isnan(theClusterParam.NNYrec_) or theClusterParam.NNYrec_>=3150 ){
     		printf("====================== NN RECO HAS FAILED: POSITION LARGER THAN BUFFER ======================"); 
-    		printf("x = %f,  y = %f\n",theClusterParam.NNXrec_, theClusterParam.NNYrec_);
+    		cout << "BPIX layer " << layer << " ladder " << ladder << " module " << module << endl;	
+		printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
     		theClusterParam.ierr = 12345;
     		for(int i = 0 ; i < TXSIZE ; i++){
     			for(int j = 0 ; j < TYSIZE ; j++) 
     				printf("%.2f ",clustMatrix[i][j]);
     			printf("\n");
     		}
-			// printf("1D CLUSTER cota = %.2f, cotb = %.2f, graphPath_x = %s, inputTensorname = %s, outputTensorName = %s, anglesTensorName = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, graphPath_x.c_str(), inputTensorName_x.c_str(),outputTensorName_.c_str(),anglesTensorName_x.c_str());
-    		for(int i = 0; i < TXSIZE; i++) printf("%.2f \n", cluster_flat_x.tensor<float,3>()(0, i, 0));
-    	}
+		
+		printf(" cota = %.2f, cotb = %.2f, cchargeTensorName_x = %s, inputTensorname_x = %s, outputTensorName_x = %s, anglesTensorName_x = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, cchargeTensorName_x.c_str(), inputTensorName_x.c_str(),outputTensorName_x.c_str(),anglesTensorName_x.c_str());
+                printf("cchargeTensorName_y = %s, inputTensorname_y = %s, outputTensorName_y = %s, anglesTensorName_y = %s\n", cchargeTensorName_y.c_str(), inputTensorName_y.c_str(),outputTensorName_y.c_str(),anglesTensorName_y.c_str());
+                cout << "Flattened cluster in x" << endl;
+		for(int i = 0; i < TXSIZE; i++) printf("%.2f ", cluster_flat_x.tensor<float,3>()(0, i, 0));
+		printf("\n");
+		cout << "Flattened cluster in y" << endl;
+                for(int i = 0; i < TYSIZE; i++) printf("%.2f ", cluster_flat_y.tensor<float,3>()(0, i, 0));
+		printf("\n");
+	}
+	else if(isnan(theClusterParam.NNSigmaX_) or theClusterParam.NNSigmaX_>=650 or isnan(theClusterParam.NNSigmaY_) or theClusterParam.NNSigmaY_>=1575){
+                printf("====================== NN RECO HAS FAILED: ERROR LARGER THAN BUFFER ======================");
+                cout << "BPIX layer " << layer << " ladder " << ladder << " module " << module << endl;
+		printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_);
+                theClusterParam.ierr = 12345;
 
+        	 for(int i = 0 ; i < TXSIZE ; i++){
+                        for(int j = 0 ; j < TYSIZE ; j++)
+                                printf("%.2f ",clustMatrix[i][j]);
+                        printf("\n");
+                }
+		printf(" cota = %.2f, cotb = %.2f, cchargeTensorName_x = %s, inputTensorname_x = %s, outputTensorName_x = %s, anglesTensorName_x = %s\n",theClusterParam.cotalpha,theClusterParam.cotbeta, cchargeTensorName_x.c_str(), inputTensorName_x.c_str(),outputTensorName_x.c_str(),anglesTensorName_x.c_str());
+    		printf("cchargeTensorName_y = %s, inputTensorname_y = %s, outputTensorName_y = %s, anglesTensorName_y = %s\n", cchargeTensorName_y.c_str(), inputTensorName_y.c_str(),outputTensorName_y.c_str(),anglesTensorName_y.c_str());
+		for(int i = 0; i < TXSIZE; i++) printf("%.2f ", cluster_flat_x.tensor<float,3>()(0, i, 0));
+    		printf("\n");
+		for(int i = 0; i < TYSIZE; i++) printf("%.2f ", cluster_flat_y.tensor<float,3>()(0, i, 0));
+		printf("\n");
+		}
     	else theClusterParam.ierr = 0.;
 } 
-  //printf("theClusterParam.ierr = %i\n",theClusterParam.ierr);
+  
   // Check exit status
 if(theClusterParam.ierr != 0) {
 	LogDebug("PixelCPENNReco::localPosition")
 	<< "reconstruction failed with error " << theClusterParam.ierr << "\n";
-	printf("NN reco has failed, compute position estimates based on cluster center of gravity + Lorentz drift\n");
+	//printf("NN reco has failed, compute position estimates based on cluster center of gravity + Lorentz drift\n");
 	// Template reco has failed, compute position estimates based on cluster center of gravity + Lorentz drift
 	// Future improvement would be to call generic reco instead
 
@@ -558,11 +586,23 @@ if(theClusterParam.ierr != 0) {
   theClusterParam.probabilityX_ = 0.05;
   theClusterParam.probabilityY_ = 0.05;
   theClusterParam.probabilityQ_ = 0.05;
-  //theClusterParam.qBin_ = 2;
+  //cout << "theClusterParam.qbin_ = "<< theClusterParam.qBin_ << endl; 
 
-  if (theClusterParam.ierr == 0)  // always true here
+  if (theClusterParam.ierr == 0){
   	theClusterParam.hasFilledProb_ = true;
-  //printf("x = %f,  y = %f\n",theClusterParam.NNXrec_, theClusterParam.NNYrec_);
+  	//printf("x = %f, x_err = %f,  y = %f,  y_err = %f\n",theClusterParam.NNXrec_, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_, theClusterParam.NNSigmaY_ );
+  	if (theClusterParam.NNSigmaX_ == 0 or theClusterParam.NNSigmaY_ == 0){
+
+		cout << "NN CPE ERROR is 0 in x or y!" << endl;
+		cout << "alpha = " << theClusterParam.cotalpha << " beta = " << theClusterParam.cotbeta << " pixmax = " << pixmax << endl;
+		for(int i = 0 ; i < TXSIZE ; i++){  
+         		for(int j = 0 ; j < TYSIZE ; j++)         
+           			printf("%.2f ",clustMatrix[i][j]);        
+	  		printf("\n");
+			}
+
+		}
+	}
   return LocalPoint(theClusterParam.NNXrec_, theClusterParam.NNYrec_);
 }
 
@@ -570,10 +610,11 @@ if(theClusterParam.ierr != 0) {
 //  localError() relies on localPosition() being called FIRST!!!
 //------------------------------------------------------------------
 LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam& theClusterParamBase) const {
-	ClusterParamTemplate& theClusterParam = static_cast<ClusterParamTemplate&>(theClusterParamBase);
+	ClusterParamGeneric& theClusterParam = static_cast<ClusterParamGeneric&>(theClusterParamBase);
 
 
 	float xerr, yerr;
+	
 
   // Check if the errors were already set at the clusters splitting level
 	if (theClusterParam.theCluster->getSplitClusterErrorX() > 0.0f &&
@@ -602,18 +643,6 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
 	bool edgey = (theDetParam.theRecTopol->isItEdgePixelInY(minPixelCol) ||
 		theDetParam.theRecTopol->isItEdgePixelInY(maxPixelCol));
 
-	//theClusterParam.ierr = 12345; // forcibly turn off error for now
-	
-	if(isnan(theClusterParam.NNSigmaX_) or theClusterParam.NNSigmaX_>=650 or isnan(theClusterParam.NNSigmaY_) or theClusterParam.NNSigmaY_>=1575){
-		printf("====================== NN RECO HAS FAILED: ERROR LARGER THAN BUFFER ======================");
-		printf("x = %f, x_err = %f, y = %f, y_err = %f\n",theClusterParam.NNXrec_*1e4, theClusterParam.NNSigmaX_, theClusterParam.NNYrec_*1e4, theClusterParam.NNSigmaY_);
-		theClusterParam.ierr = 12345;
-	}
-	if(theClusterParam.theCluster->sizeX() > 11 or theClusterParam.theCluster->sizeY() > 19){
-		edm::LogError("PixelCPENNReco") << "@SUB = PixelCPENNReco::localPosition "
-		<< "CLUSTER IS ABSURDLY LARGE ! Clustersize in x = " << theClusterParam.theCluster->sizeX() << " Clustersize in y = " << theClusterParam.theCluster->sizeY();
-		theClusterParam.ierr = 12345;
-	}
 	if (theClusterParam.ierr != 0) {
 	  // If reconstruction fails the hit position is calculated from cluster center of gravity
 	  // corrected in x by average Lorentz drift. Assign huge errors.
@@ -647,8 +676,8 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
 			throw cms::Exception(" PixelCPENNReco::localError: Something wrong with pixel edge flag !!!");
 		}
 
-	  //cout << "xerr = " << xerr << endl;
-	  //cout << "yerr = " << yerr << endl;
+	 // cout << "EDGE PIXEL in x "  << endl;
+	 // cout << "EDGE PIXEL in y "  << endl;
 	} else {
 	  // &&& need a class const
 	  //const float micronsToCm = 1.0e-4;
@@ -667,15 +696,18 @@ LocalError PixelCPENNReco::localError(DetParam const& theDetParam, ClusterParam&
 
   }  // else
 
-  if (!(xerr > 0.0f))
-  	throw cms::Exception("PixelCPENNReco::localError")
-  << "\nERROR: Negative pixel error xerr = " << xerr << "\n\n";
+  
 
-  if (!(yerr > 0.0f))
+  if (!(xerr > 0.0f)){
+	
   	throw cms::Exception("PixelCPENNReco::localError")
-  << "\nERROR: Negative pixel error yerr = " << yerr << "\n\n";
-
-  printf("xerr = %f,  yerr = %f\n", xerr, yerr);
+  << "\nERROR: Negative pixel error xerr = " << xerr << "\n";
+	}
+  if (!(yerr > 0.0f)){
+  	throw cms::Exception("PixelCPENNReco::localError")
+  << "\nERROR: Negative pixel error yerr = " << yerr << "\n";
+	}
+  
   return LocalError(xerr * xerr, 0, yerr * yerr);
 }
 
@@ -695,6 +727,6 @@ void PixelCPENNReco::fillPSetDescription(edm::ParameterSetDescription& desc) {
 	 // used by PixelCPEGenericBase
 	desc.add<double>("EdgeClusterErrorX", 50.0);
 	desc.add<double>("EdgeClusterErrorY", 85.0);
-	desc.add<bool>("UseErrorsFromTemplates", true);
-	desc.add<bool>("TruncatePixelCharge", true);
+	desc.add<bool>("UseErrorsFromTemplates", false);
+	desc.add<bool>("TruncatePixelCharge", false);
 }
