@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
-from RecoLocalTracker.SiPixelRecHits._templates_NN_default_cfi import _templates_NN_default
-templates = _templates_NN_default.clone()
+from RecoLocalTracker.SiPixelRecHits._NN_default_cfi import _NN_default
+templates = _NN_default.clone()
 
 #from PhysicsTools.TensorFlow.tfGraphDefProducer_cfi import tfGraphDefProducer 
 

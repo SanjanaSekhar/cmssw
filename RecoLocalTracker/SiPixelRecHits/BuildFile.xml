@@ -17,7 +17,17 @@
 <flags ALPAKA_BACKENDS="1"/>
 <use name="PhysicsTools/TensorFlow" />
 <use name="RecoTracker/FinalTrackSelectors"/>
-
+<use name="FWCore/Framework" />
+<use name="FWCore/PluginManager" />
+<use name="FWCore/ParameterSet" />
+<use name="PhysicsTools/TensorFlow" />
+<use name="DataFormats/TrackerRecHit2D"/>
+<use name="Alignment/OfflineValidation"/>
+<use name="SimDataFormats/Track"/>
+<use name="SimDataFormats/TrackingHit"/>
+<use name="SimTracker/TrackerHitAssociation"/>
+<use name="TrackingTools/PatternTools"/>
+<use name="TrackingTools/TrackAssociator"/>
 <export>
   <lib name="1"/>
 </export>
